@@ -166,6 +166,36 @@
             th, td { padding: 10px 5px; font-size: 0.9rem; }
             .ipa { font-size: 0.75rem; } /* 手機版改為縮小字體而非完全隱藏 */
             .checkbox-cell { width: 30px; }
+
+            /* RWD 快速新增區塊佈局調整 */
+            .add-bar {
+                gap: 10px;
+                padding: 15px;
+            }
+            .add-input-group {
+                flex: 1 1 calc(65% - 10px); /* 第一行左 */
+                order: 1;
+            }
+            #add-mean {
+                flex: 1 1 calc(35% - 10px); /* 第一行右 */
+                order: 2;
+            }
+            #add-ipa {
+                display: none; /* 手機版隱藏音標輸入框 */
+            }
+            #add-type {
+                flex: 1 1 calc(75% - 10px);
+                order: 3;
+            }
+            .btn-add {
+                width: 45px;
+                height: 45px;
+                order: 4;
+            }
+            .add-bar input, .add-bar select {
+                padding: 10px;
+                font-size: 1rem;
+            }
         }
 
         /* 批量管理樣式 */
