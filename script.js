@@ -7,26 +7,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelIcon = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
 
     const defaultVerbs = [
-        { type: "A-A-A", mean: "切割", base: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, past: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, pp: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, ing: { us: ["cutting", "/ˈkʌtɪŋ/"], uk: ["cutting", "/ˈkʌtɪŋ/"] } },
-        { type: "A-A-A", mean: "放置", base: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, past: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, pp: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, ing: { us: ["putting", "/ˈpʊtɪŋ/"], uk: ["putting", "/ˈpʊtɪŋ/"] } },
-        { type: "A-A-A", mean: "花費", base: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, past: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, pp: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, ing: { us: ["costing", "/ˈkɔstɪŋ/"], uk: ["costing", "/ˈkɒstɪŋ/"] } },
-        { type: "A-A-A", mean: "受傷/疼痛", base: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, past: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, pp: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, ing: { us: ["hurting", "/ˈhɜrtɪŋ/"], uk: ["hurting", "/ˈhɜːtɪŋ/"] } },
-        { type: "A-A-A", mean: "打擊/點擊", base: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, past: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, pp: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, ing: { us: ["hitting", "/ˈhɪtɪŋ/"], uk: ["hitting", "/ˈhɪtɪŋ/"] } },
-        { type: "A-A-B", mean: "敲擊/打敗", base: { us: ["beat", "/bit/"], uk: ["beat", "/biːt/"] }, past: { us: ["beat", "/bit/"], uk: ["beat", "/biːt/"] }, pp: { us: ["beaten", "/ˈbitn/"], uk: ["beaten", "/ˈbiːtn/"] }, ing: { us: ["beating", "/ˈbitɪŋ/"], uk: ["beating", "/ˈbiːtɪŋ/"] } },
-        { type: "A-B-B", mean: "購買", base: { us: ["buy", "/baɪ/"], uk: ["buy", "/baɪ/"] }, past: { us: ["bought", "/bɔt/"], uk: ["bought", "/bɔːt/"] }, pp: { us: ["bought", "/bɔt/"], uk: ["bought", "/bɔːt/"] }, ing: { us: ["buying", "/ˈbaɪɪŋ/"], uk: ["buying", "/ˈbaɪɪŋ/"] } },
-        { type: "A-B-B", mean: "保持", base: { us: ["keep", "/kip/"], uk: ["keep", "/kiːp/"] }, past: { us: ["kept", "/kɛpt/"], uk: ["kept", "/kɛpt/"] }, pp: { us: ["kept", "/kɛpt/"], uk: ["kept", "/kɛpt/"] }, ing: { us: ["keeping", "/ˈkipɪŋ/"], uk: ["keeping", "/ˈkiːpɪŋ/"] } },
-        { type: "A-B-B", mean: "尋找", base: { us: ["find", "/faɪnd/"], uk: ["find", "/faɪnd/"] }, past: { us: ["found", "/faʊnd/"], uk: ["found", "/faʊnd/"] }, pp: { us: ["found", "/faʊnd/"], uk: ["found", "/faʊnd/"] }, ing: { us: ["finding", "/ˈfaɪndɪŋ/"], uk: ["finding", "/ˈfaɪndɪŋ/"] } },
-        { type: "A-B-B", mean: "告訴", base: { us: ["tell", "/tɛl/"], uk: ["tell", "/tɛl/"] }, past: { us: ["told", "/toʊld/"], uk: ["told", "/təʊld/"] }, pp: { us: ["told", "/toʊld/"], uk: ["told", "/təʊld/"] }, ing: { us: ["telling", "/ˈtɛlɪŋ/"], uk: ["telling", "/ˈtɛlɪŋ/"] } },
-        { type: "A-B-B", mean: "思考", base: { us: ["think", "/θɪŋk/"], uk: ["think", "/θɪŋk/"] }, past: { us: ["thought", "/θɔt/"], uk: ["thought", "/θɔːt/"] }, pp: { us: ["thought", "/θɔt/"], uk: ["thought", "/θɔːt/"] }, ing: { us: ["thinking", "/ˈθɪŋkɪŋ/"], uk: ["thinking", "/ˈθɪŋkɪŋ/"] } },
-        { type: "A-B-A", mean: "跑", base: { us: ["run", "/rʌn/"], uk: ["run", "/rʌn/"] }, past: { us: ["ran", "/ræn/"], uk: ["ran", "/ræn/"] }, pp: { us: ["run", "/rʌn/"], uk: ["run", "/rʌn/"] }, ing: { us: ["running", "/ˈrʌnɪŋ/"], uk: ["running", "/ˈrʌnɪŋ/"] } },
-        { type: "A-B-A", mean: "成為", base: { us: ["become", "/bɪˈkʌm/"], uk: ["become", "/bɪˈkʌm/"] }, past: { us: ["became", "/bɪˈkeɪm/"], uk: ["became", "/bɪˈkeɪm/"] }, pp: { us: ["become", "/bɪˈkʌm/"], uk: ["become", "/bɪˈkʌm/"] }, ing: { us: ["becoming", "/bɪˈkʌmɪŋ/"], uk: ["becoming", "/bɪˈkʌmɪŋ/"] } },
-        { type: "A-B-A", mean: "來", base: { us: ["come", "/kʌm/"], uk: ["come", "/kʌm/"] }, past: { us: ["came", "/keɪm/"], uk: ["came", "/keɪm/"] }, pp: { us: ["come", "/kʌm/"], uk: ["come", "/kʌm/"] }, ing: { us: ["coming", "/ˈkʌmɪŋ/"], uk: ["coming", "/ˈkʌmɪŋ/"] } },
-        { type: "A-B-C", mean: "去", base: { us: ["go", "/ɡoʊ/"], uk: ["go", "/ɡəʊ/"] }, past: { us: ["went", "/wɛnt/"], uk: ["went", "/wɛnt/"] }, pp: { us: ["gone", "/ɡɔːn/"], uk: ["gone", "/ɡɒn/"] }, ing: { us: ["going", "/ˈɡoʊɪŋ/"], uk: ["going", "/ˈɡəʊɪŋ/"] } },
-        { type: "A-B-C", mean: "吃", base: { us: ["eat", "/it/"], uk: ["eat", "/iːt/"] }, past: { us: ["ate", "/eɪt/"], uk: ["ate", "/et/"] }, pp: { us: ["eaten", "/ˈitn/"], uk: ["eaten", "/ˈiːtn/"] }, ing: { us: ["eating", "/ˈitɪŋ/"], uk: ["eating", "/ˈiːtɪŋ/"] } },
-        { type: "A-B-C", mean: "拿", base: { us: ["take", "/teɪk/"], uk: ["take", "/teɪk/"] }, past: { us: ["took", "/tʊk/"], uk: ["took", "/tʊk/"] }, pp: { us: ["taken", "/ˈteɪkən/"], uk: ["taken", "/ˈteɪkən/"] }, ing: { us: ["taking", "/ˈteɪkɪŋ/"], uk: ["taking", "/ˈteɪkɪŋ/"] } },
-        { type: "A-B-C", mean: "寫", base: { us: ["write", "/raɪt/"], uk: ["write", "/raɪt/"] }, past: { us: ["wrote", "/roʊt/"], uk: ["wrote", "/rəʊt/"] }, pp: { us: ["written", "/ˈrɪtn/"], uk: ["written", "/ˈrɪtn/"] }, ing: { us: ["writing", "/ˈrɪtɪŋ/"], uk: ["writing", "/ˈrɪtɪŋ/"] } },
-        { type: "A-B-C", mean: "打破", base: { us: ["break", "/breɪk/"], uk: ["break", "/breɪk/"] }, past: { us: ["broke", "/broʊk/"], uk: ["broke", "/brəʊk/"] }, pp: { us: ["broken", "/ˈbroʊkən/"], uk: ["broken", "/ˈbrəʊkən/"] }, ing: { us: ["breaking", "/ˈbreɪkɪŋ/"], uk: ["breaking", "/ˈbreɪkɪŋ/"] } },
-        { type: "A-B-C", mean: "開始", base: { us: ["begin", "/bɪˈɡɪn/"], uk: ["begin", "/bɪˈɡɪn/"] }, past: { us: ["began", "/bɪˈɡæn/"], uk: ["began", "/bɪˈɡæn/"] }, pp: { us: ["begun", "/bɪˈɡʌn/"], uk: ["begun", "/bɪˈɡʌn/"] }, ing: { us: ["beginning", "/bɪˈɡɪnɪŋ/"], uk: ["beginning", "/bɪˈɡɪnɪŋ/"] } }
+        { type: "A-A-A", mean: "切割", base: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, past: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, pp: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] } },
+        { type: "A-A-A", mean: "放置", base: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, past: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, pp: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] } },
+        { type: "A-A-A", mean: "花費", base: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, past: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, pp: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] } },
+        { type: "A-A-A", mean: "受傷/疼痛", base: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, past: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, pp: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] } },
+        { type: "A-A-A", mean: "打擊/點擊", base: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, past: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, pp: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] } },
+        { type: "A-A-B", mean: "敲擊/打敗", base: { us: ["beat", "/bit/"], uk: ["beat", "/biːt/"] }, past: { us: ["beat", "/bit/"], uk: ["beat", "/biːt/"] }, pp: { us: ["beaten", "/ˈbitn/"], uk: ["beaten", "/ˈbiːtn/"] } },
+        { type: "A-B-B", mean: "購買", base: { us: ["buy", "/baɪ/"], uk: ["buy", "/baɪ/"] }, past: { us: ["bought", "/bɔt/"], uk: ["bought", "/bɔːt/"] }, pp: { us: ["bought", "/bɔt/"], uk: ["bought", "/bɔːt/"] } },
+        { type: "A-B-B", mean: "保持", base: { us: ["keep", "/kip/"], uk: ["keep", "/kiːp/"] }, past: { us: ["kept", "/kɛpt/"], uk: ["kept", "/kɛpt/"] }, pp: { us: ["kept", "/kɛpt/"], uk: ["kept", "/kɛpt/"] } },
+        { type: "A-B-B", mean: "尋找", base: { us: ["find", "/faɪnd/"], uk: ["find", "/faɪnd/"] }, past: { us: ["found", "/faʊnd/"], uk: ["found", "/faʊnd/"] }, pp: { us: ["found", "/faʊnd/"], uk: ["found", "/faʊnd/"] } },
+        { type: "A-B-B", mean: "告訴", base: { us: ["tell", "/tɛl/"], uk: ["tell", "/tɛl/"] }, past: { us: ["told", "/toʊld/"], uk: ["told", "/təʊld/"] }, pp: { us: ["told", "/toʊld/"], uk: ["told", "/təʊld/"] } },
+        { type: "A-B-B", mean: "思考", base: { us: ["think", "/θɪŋk/"], uk: ["think", "/θɪŋk/"] }, past: { us: ["thought", "/θɔt/"], uk: ["thought", "/θɔːt/"] }, pp: { us: ["thought", "/θɔt/"], uk: ["thought", "/θɔːt/"] } },
+        { type: "A-B-A", mean: "跑", base: { us: ["run", "/rʌn/"], uk: ["run", "/rʌn/"] }, past: { us: ["ran", "/ræn/"], uk: ["ran", "/ræn/"] }, pp: { us: ["run", "/rʌn/"], uk: ["run", "/rʌn/"] } },
+        { type: "A-B-A", mean: "成為", base: { us: ["become", "/bɪˈkʌm/"], uk: ["become", "/bɪˈkʌm/"] }, past: { us: ["became", "/bɪˈkeɪm/"], uk: ["became", "/bɪˈkeɪm/"] }, pp: { us: ["become", "/bɪˈkʌm/"], uk: ["become", "/bɪˈkʌm/"] } },
+        { type: "A-B-A", mean: "來", base: { us: ["come", "/kʌm/"], uk: ["come", "/kʌm/"] }, past: { us: ["came", "/keɪm/"], uk: ["came", "/keɪm/"] }, pp: { us: ["come", "/kʌm/"], uk: ["come", "/kʌm/"] } },
+        { type: "A-B-C", mean: "去", base: { us: ["go", "/ɡoʊ/"], uk: ["go", "/ɡəʊ/"] }, past: { us: ["went", "/wɛnt/"], uk: ["went", "/wɛnt/"] }, pp: { us: ["gone", "/ɡɔːn/"], uk: ["gone", "/ɡɒn/"] } },
+        { type: "A-B-C", mean: "吃", base: { us: ["eat", "/it/"], uk: ["eat", "/iːt/"] }, past: { us: ["ate", "/eɪt/"], uk: ["ate", "/et/"] }, pp: { us: ["eaten", "/ˈitn/"], uk: ["eaten", "/ˈiːtn/"] } },
+        { type: "A-B-C", mean: "拿", base: { us: ["take", "/teɪk/"], uk: ["take", "/teɪk/"] }, past: { us: ["took", "/tʊk/"], uk: ["took", "/tʊk/"] }, pp: { us: ["taken", "/ˈteɪkən/"], uk: ["taken", "/ˈteɪkən/"] } },
+        { type: "A-B-C", mean: "寫", base: { us: ["write", "/raɪt/"], uk: ["write", "/raɪt/"] }, past: { us: ["wrote", "/roʊt/"], uk: ["wrote", "/rəʊt/"] }, pp: { us: ["written", "/ˈrɪtn/"], uk: ["written", "/ˈrɪtn/"] } },
+        { type: "A-B-C", mean: "打破", base: { us: ["break", "/breɪk/"], uk: ["break", "/breɪk/"] }, past: { us: ["broke", "/broʊk/"], uk: ["broke", "/brəʊk/"] }, pp: { us: ["broken", "/ˈbroʊkən/"], uk: ["broken", "/ˈbrəʊkən/"] } },
+        { type: "A-B-C", mean: "開始", base: { us: ["begin", "/bɪˈɡɪn/"], uk: ["begin", "/bɪˈɡɪn/"] }, past: { us: ["began", "/bɪˈɡæn/"], uk: ["began", "/bɪˈɡæn/"] }, pp: { us: ["begun", "/bɪˈɡʌn/"], uk: ["begun", "/bɪˈɡʌn/"] } }
     ];
 
     let customVerbs = JSON.parse(localStorage.getItem('customVerbs')) || [];
@@ -47,16 +47,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnConfirmAdd = document.getElementById('btn-confirm-add');
 
     let autoFillTimeout;
-    let autoFetchedIpas = { past: { us: "", uk: "" }, ing: { us: "", uk: "" } };
+    let autoFetchedIpas = { past: { us: "", uk: "" } };
 
     const predictForms = (word) => {
-        let past = word + "ed", ing = word + "ing";
-        if (word.endsWith('e')) { past = word + "d"; ing = word.slice(0, -1) + "ing"; }
+        let past = word + "ed";
+        if (word.endsWith('e')) { past = word + "d"; }
         else if (word.match(/[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]$/)) {
             const lastChar = word.slice(-1);
-            if (!['y','w','x'].includes(lastChar)) { past = word + lastChar + "ed"; ing = word + lastChar + "ing"; }
+            if (!['y','w','x'].includes(lastChar)) { past = word + lastChar + "ed"; }
         } else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) { past = word.slice(0, -1) + "ied"; }
-        return { past, ing };
+        return { past };
     };
 
     const fetchIpaFromApi = async (word) => {
@@ -86,17 +86,16 @@ document.addEventListener('DOMContentLoaded', () => {
             addMean.value = found.mean;
             addIpa.value = (found.base.us[1] || found.base.uk[1] || "").replace(/\//g, '');
             autoFetchedIpas.past = { us: (found.past.us[1] || "").replace(/\//g, ''), uk: (found.past.uk[1] || "").replace(/\//g, '') };
-            autoFetchedIpas.ing = { us: (found.ing.us[1] || "").replace(/\//g, ''), uk: (found.ing.uk[1] || "").replace(/\//g, '') };
             addType.value = found.type;
             [addMean, addIpa, addType].forEach(el => { el.style.backgroundColor = '#e8f0fe'; setTimeout(() => el.style.backgroundColor = '', 500); });
             return;
         }
         clearTimeout(autoFillTimeout);
         autoFillTimeout = setTimeout(async () => {
-            const { past, ing } = predictForms(val);
-            const [baseIpa, pastIpa, ingIpa] = await Promise.all([fetchIpaFromApi(val), fetchIpaFromApi(past), fetchIpaFromApi(ing)]);
+            const { past } = predictForms(val);
+            const [baseIpa, pastIpa] = await Promise.all([fetchIpaFromApi(val), fetchIpaFromApi(past)]);
             addIpa.value = baseIpa.us || baseIpa.uk || "";
-            autoFetchedIpas.past = pastIpa; autoFetchedIpas.ing = ingIpa;
+            autoFetchedIpas.past = pastIpa;
             addType.value = "A-B-B";
             if (addIpa.value) { addIpa.style.backgroundColor = '#d1f2eb'; setTimeout(() => addIpa.style.backgroundColor = '', 800); }
             try {
@@ -134,17 +133,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (groupVerbs.length === 0) return;
             groupVerbs.sort((a, b) => a.base[currentLang][0].localeCompare(b.base[currentLang][0]));
             const headerRow = document.createElement('tr');
-            headerRow.innerHTML = `<td colspan="${isDeleteMode ? 7 : 6}" class="group-header">${groupType} 模式</td>`;
+            headerRow.innerHTML = `<td colspan="${isDeleteMode ? 6 : 5}" class="group-header">${groupType} 模式</td>`;
             tableBody.appendChild(headerRow);
             groupVerbs.forEach(v => {
-                const data = { base: v.base[currentLang], past: v.past[currentLang], pp: v.pp[currentLang], ing: v.ing[currentLang] };
+                const data = { base: v.base[currentLang], past: v.past[currentLang], pp: v.pp[currentLang] };
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="checkbox-cell"><input type="checkbox" class="verb-checkbox" data-id="${v.id || v.base.us[0]}"></td>
                     <td class="word-cell" data-speak="${data.base[0]}">${data.base[0]}${getIpaHtml(data.base[1])}</td>
                     <td data-speak="${data.past[0]}">${data.past[0]}${getIpaHtml(data.past[1])}</td>
                     <td data-speak="${data.pp[0]}">${data.pp[0]}${getIpaHtml(data.pp[1])}</td>
-                    <td data-speak="${data.ing[0]}">${data.ing[0]}${getIpaHtml(data.ing[1])}</td>
                     <td class="meaning">${v.mean}</td>
                     <td><button class="btn-speak" data-speak="${data.base[0]}, ${data.past[0]}, ${data.pp[0]}" title="發音">${speakerIcon}</button></td>`;
                 tableBody.appendChild(row);
@@ -157,17 +155,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const formatIpa = (v) => { v = v.trim(); if(!v) return ""; if(!v.startsWith('/')) v='/'+v; if(!v.endsWith('/')) v+='/'; return v; };
         const ipaVal = formatIpa(addIpa.value);
         if (!base || !mean) { alert("請填寫必填欄位"); return; }
-        const { past: predPast, ing: predIng } = predictForms(base);
+        const { past: predPast } = predictForms(base);
         let past = (type === 'A-A-A' ? base : predPast), pp = (type === 'A-A-A' || type === 'A-B-A' ? base : predPast);
         const newVerb = {
             id: Date.now(), isCustom: true, type, mean,
             base: { us: [base, ipaVal], uk: [base, ipaVal] },
             past: { us: [past, (type === 'A-A-A' ? ipaVal : "")], uk: [past, (type === 'A-A-A' ? ipaVal : "")] },
-            pp: { us: [pp, (type === 'A-A-A' || type === 'A-B-A' ? ipaVal : "")], uk: [pp, (type === 'A-A-A' || type === 'A-B-A' ? ipaVal : "")] },
-            ing: { us: [predIng, ""], uk: [predIng, ""] }
+            pp: { us: [pp, (type === 'A-A-A' || type === 'A-B-A' ? ipaVal : "")], uk: [pp, (type === 'A-A-A' || type === 'A-B-A' ? ipaVal : "")] }
         };
         customVerbs.push(newVerb); localStorage.setItem('customVerbs', JSON.stringify(customVerbs));
         renderTable(); addBase.value = ''; addMean.value = ''; addIpa.value = '';
+        const note = document.getElementById('autofill-note');
+        if (note) note.style.display = 'none';
     });
 
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;

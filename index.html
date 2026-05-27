@@ -7,14 +7,26 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.dictionaryapi.dev https://api.mymemory.translated.net;">
     <title>動詞三態字典表 - Verb Conjugation</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 確保 PC 版輸入框比例優化 */
+        @media (min-width: 601px) {
+            .add-bar { display: flex; gap: 10px; align-items: center; }
+            .add-input-group { flex: 4; display: flex; gap: 5px; align-items: center; }
+            .input-with-hint { flex: 1.5; }
+            #add-mean { flex: 2.5; }
+            #add-ipa { flex: 2; }
+            #add-type { flex: 1; }
+            .add-bar input, .add-bar select { width: 100%; min-width: 0; }
+        }
+    </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header-container">
         <h1>動詞變位單字表</h1>
-        <div class="header-controls">
-            <button id="btn-toggle-delete" class="toggle-btn btn-manage" title="批量管理">
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="btn-toggle-delete" class="toggle-btn" style="border: 1px solid var(--border-color); padding: 8px; display: flex; align-items: center; justify-content: center;" title="批量管理">
                 <svg class="icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </button>
             <div class="toggle-group">
@@ -32,6 +44,14 @@
                 <svg class="icon" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
             </button>
         </div>
+        <div class="input-with-hint">
+            <input type="text" id="add-past" placeholder="過去式 (Past)">
+            <span class="irregular-hint-icon" title="此為預測的不規則變化，請檢查">⚠️</span>
+        </div>
+        <div class="input-with-hint">
+            <input type="text" id="add-pp" placeholder="過去分詞 (P.P.)">
+            <span class="irregular-hint-icon" title="此為預測的不規則變化，請檢查">⚠️</span>
+        </div>
         <input type="text" id="add-mean" placeholder="中文解釋...">
         <input type="text" id="add-ipa" placeholder="音標 (如: /hɜrt/)">
         <select id="add-type" title="選擇變化模式">
@@ -43,7 +63,9 @@
         <button class="btn-add" id="btn-confirm-add" title="確認加入">➕</button>
     </div>
 
-    <button id="btn-confirm-delete" class="btn-confirm-delete" title="執行刪除"></button>
+    <div id="autofill-note" class="autofill-note">💡 查無收錄內容，請檢查預測結果或自行填入。</div>
+
+    <button id="btn-confirm-delete" title="刪除"></button>
 
     <div class="table-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
         <table>
@@ -53,7 +75,6 @@
                     <th>原型 (Base)</th>
                     <th>過去式 (Past)</th>
                     <th>過去分詞 (P.P.)</th>
-                    <th>現在分詞 (ing)</th>
                     <th>中文解釋</th>
                     <th title="發音">
                         <svg class="icon" style="width: 18px; height: 18px; color: #7f8c8d;" viewBox="0 0 24 24">
@@ -69,6 +90,372 @@
     </div>
 </div>
 
-<script src="script.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const speakerIcon = `<svg class="icon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+        const manageIcon = `<svg class="icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+        const cancelIcon = `<svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>`;
+
+        const defaultVerbs = [
+            // A-A-A 模式 (三態同形)
+            { type: "A-A-A", mean: "切割", base: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, past: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] }, pp: { us: ["cut", "/kʌt/"], uk: ["cut", "/kʌt/"] } },
+            { type: "A-A-A", mean: "放置", base: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, past: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] }, pp: { us: ["put", "/pʊt/"], uk: ["put", "/pʊt/"] } },
+            { type: "A-A-A", mean: "花費", base: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, past: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] }, pp: { us: ["cost", "/kɔst/"], uk: ["cost", "/kɒst/"] } },
+            { type: "A-A-A", mean: "受傷/疼痛", base: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, past: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] }, pp: { us: ["hurt", "/hɜrt/"], uk: ["hurt", "/hɜːt/"] } },
+            { type: "A-A-A", mean: "打擊/點擊", base: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, past: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] }, pp: { us: ["hit", "/hɪt/"], uk: ["hit", "/hɪt/"] } },
+            
+            // A-A-B 模式 (原型與過去式相同)
+            { type: "A-A-B", mean: "敲擊/打敗", base: { us: ["beat", "/bit/"], uk: ["beat", "/biːt/"] }, past: { us: ["beat", "/bit/"], uk: ["beat", "/biːt/"] }, pp: { us: ["beaten", "/ˈbitn/"], uk: ["beaten", "/ˈbiːtn/"] } },
+
+            // A-B-B 模式 (過去式與過去分詞相同)
+            { type: "A-B-B", mean: "購買", base: { us: ["buy", "/baɪ/"], uk: ["buy", "/baɪ/"] }, past: { us: ["bought", "/bɔt/"], uk: ["bought", "/bɔːt/"] }, pp: { us: ["bought", "/bɔt/"], uk: ["bought", "/bɔːt/"] } },
+            { type: "A-B-B", mean: "保持", base: { us: ["keep", "/kip/"], uk: ["keep", "/kiːp/"] }, past: { us: ["kept", "/kɛpt/"], uk: ["kept", "/kɛpt/"] }, pp: { us: ["kept", "/kɛpt/"], uk: ["kept", "/kɛpt/"] } },
+            { type: "A-B-B", mean: "尋找", base: { us: ["find", "/faɪnd/"], uk: ["find", "/faɪnd/"] }, past: { us: ["found", "/faʊnd/"], uk: ["found", "/faʊnd/"] }, pp: { us: ["found", "/faʊnd/"], uk: ["found", "/faʊnd/"] } },
+            { type: "A-B-B", mean: "告訴", base: { us: ["tell", "/tɛl/"], uk: ["tell", "/tɛl/"] }, past: { us: ["told", "/toʊld/"], uk: ["told", "/təʊld/"] }, pp: { us: ["told", "/toʊld/"], uk: ["told", "/təʊld/"] } },
+            { type: "A-B-B", mean: "思考", base: { us: ["think", "/θɪŋk/"], uk: ["think", "/θɪŋk/"] }, past: { us: ["thought", "/θɔt/"], uk: ["thought", "/θɔːt/"] }, pp: { us: ["thought", "/θɔt/"], uk: ["thought", "/θɔːt/"] } },
+
+            // A-B-A 模式 (原型與過去分詞相同)
+            { type: "A-B-A", mean: "跑", base: { us: ["run", "/rʌn/"], uk: ["run", "/rʌn/"] }, past: { us: ["ran", "/ræn/"], uk: ["ran", "/ræn/"] }, pp: { us: ["run", "/rʌn/"], uk: ["run", "/rʌn/"] } },
+            { type: "A-B-A", mean: "成為", base: { us: ["become", "/bɪˈkʌm/"], uk: ["become", "/bɪˈkʌm/"] }, past: { us: ["became", "/bɪˈkeɪm/"], uk: ["became", "/bɪˈkeɪm/"] }, pp: { us: ["become", "/bɪˈkʌm/"], uk: ["become", "/bɪˈkʌm/"] } },
+            { type: "A-B-A", mean: "來", base: { us: ["come", "/kʌm/"], uk: ["come", "/kʌm/"] }, past: { us: ["came", "/keɪm/"], uk: ["came", "/keɪm/"] }, pp: { us: ["come", "/kʌm/"], uk: ["come", "/kʌm/"] } },
+
+            // A-B-C 模式 (三態皆不同形)
+            { type: "A-B-C", mean: "去", base: { us: ["go", "/ɡoʊ/"], uk: ["go", "/ɡəʊ/"] }, past: { us: ["went", "/wɛnt/"], uk: ["went", "/wɛnt/"] }, pp: { us: ["gone", "/ɡɔːn/"], uk: ["gone", "/ɡɒn/"] } },
+            { type: "A-B-C", mean: "吃", base: { us: ["eat", "/it/"], uk: ["eat", "/iːt/"] }, past: { us: ["ate", "/eɪt/"], uk: ["ate", "/et/"] }, pp: { us: ["eaten", "/ˈitn/"], uk: ["eaten", "/ˈiːtn/"] } },
+            { type: "A-B-C", mean: "拿", base: { us: ["take", "/teɪk/"], uk: ["take", "/teɪk/"] }, past: { us: ["took", "/tʊk/"], uk: ["took", "/tʊk/"] }, pp: { us: ["taken", "/ˈteɪkən/"], uk: ["taken", "/ˈteɪkən/"] } },
+            { type: "A-B-C", mean: "寫", base: { us: ["write", "/raɪt/"], uk: ["write", "/raɪt/"] }, past: { us: ["wrote", "/roʊt/"], uk: ["wrote", "/rəʊt/"] }, pp: { us: ["written", "/ˈrɪtn/"], uk: ["written", "/ˈrɪtn/"] } },
+            { type: "A-B-C", mean: "打破", base: { us: ["break", "/breɪk/"], uk: ["break", "/breɪk/"] }, past: { us: ["broke", "/broʊk/"], uk: ["broke", "/brəʊk/"] }, pp: { us: ["broken", "/ˈbroʊkən/"], uk: ["broken", "/ˈbrəʊkən/"] } },
+            { type: "A-B-C", mean: "開始", base: { us: ["begin", "/bɪˈɡɪn/"], uk: ["begin", "/bɪˈɡɪn/"] }, past: { us: ["began", "/bɪˈɡæn/"], uk: ["began", "/bɪˈɡæn/"] }, pp: { us: ["begun", "/bɪˈɡʌn/"], uk: ["begun", "/bɪˈɡʌn/"] } }
+        ];
+
+        let customVerbs = JSON.parse(localStorage.getItem('customVerbs')) || [];
+        let hiddenDefaultIds = JSON.parse(localStorage.getItem('hiddenDefaultIds')) || [];
+        let isDeleteMode = false;
+        let currentLang = 'us';
+
+        const tableBody = document.getElementById('verbTableBody');
+        const btnToggleDelete = document.getElementById('btn-toggle-delete');
+        const btnConfirmDelete = document.getElementById('btn-confirm-delete');
+        const btnUs = document.getElementById('btn-us');
+        const btnUk = document.getElementById('btn-uk');
+        const btnMic = document.getElementById('btn-mic');
+        const addBase = document.getElementById('add-base');
+        const addPast = document.getElementById('add-past');
+        const addPp = document.getElementById('add-pp');
+        const addMean = document.getElementById('add-mean');
+        const addIpa = document.getElementById('add-ipa');
+        const addType = document.getElementById('add-type');
+        const btnConfirmAdd = document.getElementById('btn-confirm-add');
+
+        const pastHintIcon = document.querySelector('#add-past + .irregular-hint-icon');
+        const ppHintIcon = document.querySelector('#add-pp + .irregular-hint-icon');
+
+        let autoFillTimeout;
+        const predictForms = (word) => {
+            // 預設為規則變化
+            let past = word + "ed";
+            let isIrregular = false; // 標記是否為不規則預測
+
+            // 1. 特殊類規律不規則變化
+            if (word.endsWith('eep') && word.length > 3) { 
+                past = word.slice(0, -3) + "ept"; // keep -> kept, sleep -> slept
+                isIrregular = true;
+            } else if (word.endsWith('ell') && (word === 'tell' || word === 'sell')) {
+                past = word.slice(0, -3) + "old"; // tell -> told, sell -> sold
+                isIrregular = true;
+            } else if (word.endsWith('ind') && word.length > 3) {
+                past = word.slice(0, -3) + "ound"; // find -> found, bind -> bound
+                isIrregular = true;
+            } else if (word === 'say') {
+                past = "said";
+                isIrregular = true;
+            } else if (word.endsWith('atch') && word.length > 4) { // catch -> caught
+                past = word.slice(0, -4) + "aught";
+                isIrregular = true;
+            } else if (word.endsWith('each') && word.length > 4) { // teach -> taught
+                past = word.slice(0, -4) + "aught";
+                isIrregular = true;
+            } else if (word === 'pay') {
+                past = "paid";
+                isIrregular = true;
+            } else if (word === 'lay') {
+                past = "laid";
+                isIrregular = true;
+            }
+            // 2. 結尾為 e (如 bake -> baked)
+            else if (word.endsWith('e')) {
+                past = word + "d";
+            } 
+            // 3. 結尾為 子音 + y (如 study -> studied)
+            else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) {
+                past = word.slice(0, -1) + "ied";
+            }
+            // 4. 重複字尾規則 (短母音 + 單子音，如 stop -> stopped)
+            else if (word.match(/[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]$/)) {
+                const lastChar = word.slice(-1);
+                if (!['y','w','x'].includes(lastChar)) {
+                    past = word + lastChar + "ed";
+                }
+            }
+            return { past, isIrregular };
+        };
+
+        const fetchIpaFromApi = async (word) => {
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const entry = data[0];
+                    let usIpa = "", ukIpa = "";
+                    if (entry.phonetics && entry.phonetics.length > 0) {
+                        const usEntry = entry.phonetics.find(p => p.audio?.includes('-us') || p.sourceUrl?.includes('cambridge'));
+                        const ukEntry = entry.phonetics.find(p => p.audio?.includes('-uk') || !p.audio);
+                        usIpa = (usEntry?.text || entry.phonetic || "").replace(/\//g, '');
+                        ukIpa = (ukEntry?.text || entry.phonetic || "").replace(/\//g, '');
+                    }
+                    return { us: usIpa, uk: ukIpa };
+                }
+            } catch (e) {}
+            return { us: "", uk: "" };
+        };
+
+        const performAutoFill = async () => {
+            const val = addBase.value.trim().toLowerCase();
+            const note = document.getElementById('autofill-note');
+            if (val.length < 2) {
+                if (note) note.style.display = 'none';
+                return;
+            }
+
+            // 1. 優先從本地字典尋找準確資料
+            const allVerbs = [...defaultVerbs, ...customVerbs];
+            const found = allVerbs.find(v => 
+                v.base.us[0].toLowerCase() === val || 
+                v.base.uk[0].toLowerCase() === val
+            );
+
+            if (found) {
+                addMean.value = found.mean;
+                addPast.value = found.past.us[0];
+                addPp.value = found.pp.us[0];
+                addIpa.value = (found.base.us[1] || found.base.uk[1] || "").replace(/\//g, '');
+                addType.value = found.type;
+                
+                [addMean, addIpa, addType, addPast, addPp].forEach(el => {
+                    el.style.backgroundColor = '#e8f0fe';
+                    setTimeout(() => el.style.backgroundColor = '', 500);
+                });
+                // 找到字典資料，隱藏提示圖示
+                if (pastHintIcon) pastHintIcon.style.display = 'none';
+                if (ppHintIcon) ppHintIcon.style.display = 'none';
+                if (note) note.style.display = 'none';
+                return;
+            }
+
+            // 2. 找不到則進行智慧預測與 API 抓取
+            clearTimeout(autoFillTimeout);
+            autoFillTimeout = setTimeout(async () => {
+                if (note) note.style.display = 'block';
+                addType.value = "A-B-B"; // 預測模式預設為 A-B-B
+                const { past: predictedPast, isIrregular } = predictForms(val); // 獲取預測結果及是否為不規則
+                
+                addPast.value = predictedPast;
+                addPp.value = predictedPast; // 對於 A-B-B 模式，過去分詞與過去式相同
+
+                const ipa = await fetchIpaFromApi(val);
+                addIpa.value = ipa.us || ipa.uk || "";
+
+                // 根據 isIrregular 顯示或隱藏提示圖示
+                if (isIrregular) {
+                    if (pastHintIcon) pastHintIcon.style.display = 'inline-block';
+                    if (ppHintIcon) ppHintIcon.style.display = 'inline-block';
+                } else {
+                    if (pastHintIcon) pastHintIcon.style.display = 'none';
+                    if (ppHintIcon) ppHintIcon.style.display = 'none';
+                }
+
+                if (addIpa.value) {
+                    addIpa.style.backgroundColor = '#d1f2eb';
+                    setTimeout(() => addIpa.style.backgroundColor = '', 800);
+                }
+            }, 800);
+        };
+
+        addBase.addEventListener('input', performAutoFill);
+        const renderTable = (filter = '') => {
+            tableBody.innerHTML = '';
+            const getIpaHtml = (ipa) => {
+                if (typeof ipa !== 'string') return '';
+                const trimmed = ipa.trim();
+                return (!trimmed || trimmed === "" || trimmed === "/ /") ? '' : `<span class="ipa">${trimmed}</span>`;
+            };
+
+            const query = filter.toLowerCase().trim();
+            const allVerbs = [
+                ...defaultVerbs.filter(v => !hiddenDefaultIds.includes(v.base.us[0])),
+                ...customVerbs
+            ];
+
+            const groupOrder = ["A-A-A", "A-A-B", "A-B-B", "A-B-A", "A-B-C"];
+            document.querySelector('.checkbox-cell').style.display = isDeleteMode ? 'table-cell' : 'none';
+
+            groupOrder.forEach(groupType => {
+                const groupVerbs = allVerbs.filter(v => {
+                    if (v.type !== groupType) return false;
+                    if (!query) return true;
+                    return v.mean.includes(query) || 
+                           v.base[currentLang][0].toLowerCase().includes(query);
+                });
+                if (groupVerbs.length === 0) return;
+
+                // 加入排序邏輯：在每個分類模式內，按字母 A-Z 排序
+                groupVerbs.sort((a, b) => a.base[currentLang][0].localeCompare(b.base[currentLang][0]));
+
+                const headerRow = document.createElement('tr');
+                headerRow.innerHTML = `<td colspan="${isDeleteMode ? 6 : 5}" class="group-header">${groupType} 模式</td>`;
+                tableBody.appendChild(headerRow);
+
+                groupVerbs.forEach(v => {
+                    const data = { base: v.base[currentLang], past: v.past[currentLang], pp: v.pp[currentLang] };
+                    const verbId = v.id || v.base.us[0];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="checkbox-cell" style="display: ${isDeleteMode ? 'table-cell' : 'none'};">
+                            <input type="checkbox" class="verb-checkbox" data-id="${verbId}">
+                        </td>
+                        <td class="word-cell" data-speak="${data.base[0]}">${data.base[0]}${getIpaHtml(data.base[1])}</td>
+                        <td data-speak="${data.past[0]}">${data.past[0]}${getIpaHtml(data.past[1])}</td>
+                        <td data-speak="${data.pp[0]}">${data.pp[0]}${getIpaHtml(data.pp[1])}</td>
+                        <td class="meaning">${v.mean}</td>
+                        <td><button class="btn-speak" data-speak="${data.base[0]}, ${data.past[0]}, ${data.pp[0]}">${speakerIcon}</button></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            });
+        };
+
+        btnConfirmAdd.addEventListener('click', () => {
+            const base = addBase.value.trim();
+            const mean = addMean.value.trim();
+            if (!base || !mean) return alert("請填寫單字與解釋");
+
+            const { past: predPast } = predictForms(base);
+            const newVerb = {
+                id: Date.now(),
+                type: addType.value,
+                mean: mean,
+                base: { us: [base, addIpa.value], uk: [base, addIpa.value] },
+                past: { us: [addPast.value || predPast, ""], uk: [addPast.value || predPast, ""] },
+                pp: { us: [addPp.value || predPast, ""], uk: [addPp.value || predPast, ""] }
+            };
+
+            customVerbs.push(newVerb);
+            localStorage.setItem('customVerbs', JSON.stringify(customVerbs));
+            addBase.value = ''; addMean.value = ''; addPast.value = ''; addPp.value = ''; addIpa.value = '';
+            renderTable();
+            // 清空輸入框後隱藏提示圖示
+            if (pastHintIcon) pastHintIcon.style.display = 'none';
+            if (ppHintIcon) ppHintIcon.style.display = 'none';
+            const note = document.getElementById('autofill-note');
+            if (note) note.style.display = 'none';
+        });
+
+        // 語音辨識
+        const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (Recognition) {
+            const recognition = new Recognition();
+            recognition.onstart = () => btnMic.classList.add('recording');
+            recognition.onend = () => btnMic.classList.remove('recording');
+            recognition.onresult = (e) => {
+                addBase.value = e.results[0][0].transcript.toLowerCase();
+                // 語音輸入後也觸發自動填寫
+                addPast.value = ''; // 清空舊的預測
+                addPp.value = ''; // 清空舊的預測
+                performAutoFill();
+            };
+            btnMic.addEventListener('click', () => recognition.start());
+        }
+
+        btnToggleDelete.addEventListener('click', () => {
+            isDeleteMode = !isDeleteMode;
+            btnToggleDelete.innerHTML = isDeleteMode ? cancelIcon : manageIcon;
+            btnConfirmDelete.style.display = isDeleteMode ? 'flex' : 'none';
+            btnConfirmDelete.innerHTML = `${manageIcon} 執行刪除 (0)`;
+            document.querySelector('table').classList.toggle('delete-mode', isDeleteMode);
+            renderTable();
+        });
+
+        // 更新選中計數邏輯
+        tableBody.addEventListener('change', (e) => {
+            if (e.target.classList.contains('verb-checkbox')) {
+                const count = document.querySelectorAll('.verb-checkbox:checked').length;
+                btnConfirmDelete.innerHTML = `${manageIcon} 執行刪除 (${count})`;
+            }
+        });
+
+        // 全選功能邏輯
+        const selectAll = document.getElementById('select-all');
+        if (selectAll) {
+            selectAll.addEventListener('change', (e) => {
+                const checkboxes = document.querySelectorAll('.verb-checkbox');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+                const count = document.querySelectorAll('.verb-checkbox:checked').length;
+                btnConfirmDelete.innerHTML = `${manageIcon} 執行刪除 (${count})`;
+            });
+        }
+
+        btnConfirmDelete.addEventListener('click', () => {
+            const checked = document.querySelectorAll('.verb-checkbox:checked');
+            const ids = Array.from(checked).map(cb => cb.getAttribute('data-id'));
+            if (ids.length === 0) return;
+            
+            if (confirm(`確定刪除 ${ids.length} 個單字？`)) {
+                customVerbs = customVerbs.filter(v => !ids.includes(v.id?.toString()));
+                ids.forEach(id => {
+                    if (defaultVerbs.some(dv => dv.base.us[0] === id)) hiddenDefaultIds.push(id);
+                });
+                localStorage.setItem('customVerbs', JSON.stringify(customVerbs));
+                localStorage.setItem('hiddenDefaultIds', JSON.stringify(hiddenDefaultIds));
+                isDeleteMode = false;
+                btnToggleDelete.innerHTML = manageIcon;
+                btnConfirmDelete.style.display = 'none';
+                if (selectAll) selectAll.checked = false;
+                renderTable();
+            }
+        });
+
+        btnUs.addEventListener('click', () => {
+            currentLang = 'us';
+            btnUs.classList.add('active'); btnUk.classList.remove('active');
+            renderTable();
+        });
+
+        btnUk.addEventListener('click', () => {
+            currentLang = 'uk';
+            btnUk.classList.add('active'); btnUs.classList.remove('active');
+            renderTable();
+        });
+
+        const speak = (text, element) => {
+            window.speechSynthesis.cancel();
+            document.querySelectorAll('.speaking').forEach(el => el.classList.remove('speaking'));
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = currentLang === 'us' ? 'en-US' : 'en-GB';
+            msg.rate = 0.85;
+            if (element) {
+                msg.onstart = () => element.classList.add('speaking');
+                msg.onend = () => element.classList.remove('speaking');
+            }
+            window.speechSynthesis.speak(msg);
+        };
+
+        tableBody.addEventListener('click', (e) => {
+            const clickable = e.target.closest('[data-speak]');
+            if (clickable) speak(clickable.getAttribute('data-speak'), clickable);
+        });
+
+        renderTable();
+    });
+</script>
 </body>
 </html>

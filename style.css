@@ -99,12 +99,13 @@ th {
 }
 
 td {
-    padding: 15px;
+    padding: 12px 15px; /* 統一內距 */
     border-bottom: 1px solid var(--border-color);
     vertical-align: middle;
 }
 
 .word-cell, td:nth-child(2), td:nth-child(3), td:nth-child(4) {
+    font-size: 1.2rem; /* 增加單字字體大小 */
     font-weight: 600;
     color: var(--primary-color);
     cursor: pointer;
@@ -161,6 +162,32 @@ td:hover:not(.meaning):not(:last-child) {
     transition: transform 0.2s;
 }
 
+.input-with-hint {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.input-with-hint input {
+    flex-grow: 1;
+}
+.irregular-hint-icon {
+    position: absolute;
+    right: 10px;
+    color: orange;
+    font-size: 1.2rem;
+    cursor: help;
+    display: none; /* 預設隱藏 */
+}
+
+.autofill-note {
+    display: none;
+    color: #d35400;
+    font-size: 0.9rem;
+    margin: -20px 0 20px 10px;
+    font-weight: bold;
+    animation: fadeIn 0.3s;
+}
+
 .btn-speak:hover {
     transform: scale(1.2);
 }
@@ -178,7 +205,7 @@ tr:hover {
 }
 
 .delete-mode .checkbox-cell {
-    display: table-cell; /* 只有在 delete-mode 下才顯示 */
+    display: table-cell !important; /* 強制顯示 */
 }
 
 .btn-confirm-delete {
@@ -196,7 +223,7 @@ tr:hover {
     gap: 8px;
     transition: background 0.2s;
 }
-#btn-confirm-delete:hover { background-color: #c0392b; }
+#btn-confirm-delete:hover { background-color: #c0392b;color: white;border: none; }
 
 /* 快速新增區塊樣式 */
 .add-bar {
@@ -213,7 +240,7 @@ tr:hover {
 
 .add-input-group {
     display: flex;
-    flex: 5;
+    flex: 10; /* 加寬原型輸入區域的比例 */
     gap: 10px;
     min-width: 0;
     align-items: center;
@@ -233,6 +260,7 @@ tr:hover {
 }
 
 #add-base { flex: 1; }
+#add-past, #add-pp { flex: 1.5; }
 #add-mean { flex: 2.5; }
 #add-ipa { flex: 2; }
 #add-type { flex: 0.8; }
@@ -252,6 +280,8 @@ tr:hover {
     flex-shrink: 0;
     transition: all 0.3s;
 }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .btn-add:hover {
     background: #219150;
@@ -281,34 +311,43 @@ tr:hover {
 
 @media (max-width: 600px) {
     .container { padding: 15px; }
-    th, td { padding: 10px 5px; font-size: 0.9rem; }
+    th, td { padding: 8px 5px; font-size: 0.85rem; }
     .ipa { font-size: 0.75rem; }
     .checkbox-cell { width: 30px; }
 
     /* RWD 快速新增區塊佈局調整 */
     .add-bar {
-        gap: 10px;
-        padding: 15px;
+        gap: 8px;
+        padding: 12px;
+        flex-wrap: wrap;
     }
     .add-input-group {
-        flex: 1 1 calc(65% - 10px); /* 第一行左：原型 */
+        flex: 1 1 100% !important; /* 第一列：原型 + 喇叭 */
         order: 1;
     }
-    #add-mean {
-        flex: 1 1 calc(35% - 10px); /* 第一行右：中文 */
+    .add-bar .input-with-hint {
+        flex: 1 1 calc(50% - 5px) !important; /* 第二列：過去式/分詞容器 */
         order: 2;
     }
-    #add-ipa {
-        display: none; /* 手機版隱藏音標輸入框以節省空間 */
+    #add-mean {
+        flex: 1 1 calc(50% - 5px) !important; /* 第三列：中文解釋 */
+        order: 4;
     }
     #add-type {
-        flex: 1 1 calc(75% - 10px); /* 讓分類佔據第二行大部份空間 */
-        order: 3;
+        flex: 1 1 calc(50% - 5px) !important; /* 第三列：模式 */
+        order: 5;
     }
+    #add-ipa { display: none; }
+    
     .btn-add {
-        width: 45px;
-        height: 45px;
-        order: 4;
+        order: 6;
+        margin: 5px auto 0;
+        width: 48px;
+        height: 48px;
+    }
+    /* 手機版單字字體大小調整 */
+    .word-cell, td:nth-child(2), td:nth-child(3), td:nth-child(4) {
+        font-size: 1rem;
     }
     .add-bar input, .add-bar select {
         padding: 10px;
