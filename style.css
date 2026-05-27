@@ -170,15 +170,6 @@ td:hover:not(.meaning):not(:last-child) {
 .input-with-hint input {
     flex-grow: 1;
 }
-.irregular-hint-icon {
-    position: absolute;
-    right: 10px;
-    color: orange;
-    font-size: 1.2rem;
-    cursor: help;
-    display: none; /* 預設隱藏 */
-}
-
 .autofill-note {
     display: none;
     color: #d35400;
@@ -311,6 +302,15 @@ tr:hover {
 
 @media (max-width: 600px) {
     .container { padding: 15px; }
+    
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .header-controls {
+        width: 100%;
+    }
     th, td { padding: 8px 5px; font-size: 0.85rem; }
     .ipa { font-size: 0.75rem; }
     .checkbox-cell { width: 30px; }

@@ -26,7 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
         { type: "A-B-C", mean: "拿", base: { us: ["take", "/teɪk/"], uk: ["take", "/teɪk/"] }, past: { us: ["took", "/tʊk/"], uk: ["took", "/tʊk/"] }, pp: { us: ["taken", "/ˈteɪkən/"], uk: ["taken", "/ˈteɪkən/"] } },
         { type: "A-B-C", mean: "寫", base: { us: ["write", "/raɪt/"], uk: ["write", "/raɪt/"] }, past: { us: ["wrote", "/roʊt/"], uk: ["wrote", "/rəʊt/"] }, pp: { us: ["written", "/ˈrɪtn/"], uk: ["written", "/ˈrɪtn/"] } },
         { type: "A-B-C", mean: "打破", base: { us: ["break", "/breɪk/"], uk: ["break", "/breɪk/"] }, past: { us: ["broke", "/broʊk/"], uk: ["broke", "/brəʊk/"] }, pp: { us: ["broken", "/ˈbroʊkən/"], uk: ["broken", "/ˈbrəʊkən/"] } },
-        { type: "A-B-C", mean: "開始", base: { us: ["begin", "/bɪˈɡɪn/"], uk: ["begin", "/bɪˈɡɪn/"] }, past: { us: ["began", "/bɪˈɡæn/"], uk: ["began", "/bɪˈɡæn/"] }, pp: { us: ["begun", "/bɪˈɡʌn/"], uk: ["begun", "/bɪˈɡʌn/"] } }
+        { type: "A-B-C", mean: "開始", base: { us: ["begin", "/bɪˈɡɪn/"], uk: ["begin", "/bɪˈɡɪn/"] }, past: { us: ["began", "/bɪˈɡæn/"], uk: ["began", "/bɪˈɡæn/"] }, pp: { us: ["begun", "/bɪˈɡʌn/"], uk: ["begun", "/bɪˈɡʌn/"] } },
+        { type: "A-B-C", mean: "看見", base: { us: ["see", "/siː/"], uk: ["see", "/siː/"] }, past: { us: ["saw", "/sɔː/"], uk: ["saw", "/sɔː/"] }, pp: { us: ["seen", "/siːn/"], uk: ["seen", "/siːn/"] } },
+        { type: "A-B-C", mean: "做", base: { us: ["do", "/duː/"], uk: ["do", "/duː/"] }, past: { us: ["did", "/dɪd/"], uk: ["did", "/dɪd/"] }, pp: { us: ["done", "/dʌn/"], uk: ["done", "/dʌn/"] } },
+        { type: "A-B-B", mean: "得到", base: { us: ["get", "/ɡet/"], uk: ["get", "/ɡet/"] }, past: { us: ["got", "/ɡɑːt/"], uk: ["got", "/ɡɒt/"] }, pp: { us: ["got", "/ɡɑːt/"], uk: ["got", "/ɡɒt/"] } },
+        { type: "A-B-B", mean: "製作", base: { us: ["make", "/meɪk/"], uk: ["make", "/meɪk/"] }, past: { us: ["made", "/meɪd/"], uk: ["made", "/meɪd/"] }, pp: { us: ["made", "/meɪd/"], uk: ["made", "/meɪd/"] } }
     ];
 
     let customVerbs = JSON.parse(localStorage.getItem('customVerbs')) || [];
@@ -50,13 +54,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let autoFetchedIpas = { past: { us: "", uk: "" } };
 
     const predictForms = (word) => {
-        let past = word + "ed";
-        if (word.endsWith('e')) { past = word + "d"; }
+        let past = word + "ed", pp = word + "ed", type = "A-B-B";
+        if (word.match(/i[bcdfghjklmnpqrstvwxyz]e$/)) { // drive -> drove -> driven
+            past = word.replace(/i([bcdfghjklmnpqrstvwxyz])e$/, "o$1e");
+            pp = word.replace(/i([bcdfghjklmnpqrstvwxyz])e$/, "i$1en");
+            type = "A-B-C";
+        } else if (word.match(/[bcdfghjklmnpqrstvwxyz]ow$/)) {
+            past = word.slice(0, -2) + "ew"; pp = word + "n"; type = "A-B-C";
+        } else if (word.endsWith('e')) { past = word + "d"; pp = word + "d"; }
         else if (word.match(/[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]$/)) {
             const lastChar = word.slice(-1);
-            if (!['y','w','x'].includes(lastChar)) { past = word + lastChar + "ed"; }
-        } else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) { past = word.slice(0, -1) + "ied"; }
-        return { past };
+            if (!['y','w','x'].includes(lastChar)) { past = pp = word + lastChar + "ed"; }
+        } else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) { past = pp = word.slice(0, -1) + "ied"; }
+        return { past, pp, type };
     };
 
     const fetchIpaFromApi = async (word) => {
