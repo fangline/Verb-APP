@@ -6,6 +6,10 @@
     --border-color: #e0e0e0;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 body {
     font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-color);
@@ -37,6 +41,7 @@ body {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: nowrap;
 }
 
 h1 {
@@ -310,6 +315,7 @@ tr:hover {
     }
     .header-controls {
         width: 100%;
+        justify-content: flex-start;
     }
     th, td { padding: 8px 5px; font-size: 0.85rem; }
     .ipa { font-size: 0.75rem; }
