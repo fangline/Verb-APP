@@ -361,12 +361,20 @@
         if (Recognition) {
             const recognition = new Recognition();
             recognition.lang = 'en-US'; // 指定為英文辨識以提高準確度
-            recognition.interimResults = false;
+            recognition.interimResults = false; 
             recognition.maxAlternatives = 1;
 
             recognition.onstart = () => btnMic.classList.add('recording');
             recognition.onend = () => btnMic.classList.remove('recording');
             
+            // 點擊時先檢查是否為安全連線 (HTTPS)
+            btnMic.addEventListener('click', () => {
+                if (!window.isSecureContext && location.hostname !== 'localhost') {
+                    alert('語音功能僅支援 HTTPS 安全連線。手機測試請務必使用 HTTPS 環境。');
+                }
+                recognition.start();
+            });
+
             recognition.onresult = (e) => {
                 addBase.value = e.results[0][0].transcript.toLowerCase();
                 // 語音輸入後也觸發自動填寫
