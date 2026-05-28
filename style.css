@@ -310,6 +310,7 @@ tr:hover {
     background: #e67e22 !important; /* 橘色 */
     animation: pulse-orange 1.5s infinite;
     border: 2px solid #fff;
+    will-change: transform, box-shadow; /* 提示瀏覽器優化性能 */
 }
 
 @media (max-width: 600px) {

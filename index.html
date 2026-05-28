@@ -365,27 +365,42 @@
             recognition.maxAlternatives = 1;
             recognition.continuous = false; // iOS 建議設為 false 以提高穩定性
 
-            recognition.onstart = () => btnMic.classList.add('recording');
-            recognition.onend = () => btnMic.classList.remove('recording');
+            recognition.onstart = () => {
+                btnMic.classList.add('recording');
+                addBase.placeholder = "請說...";
+                addBase.value = ""; // 清空內容以顯示 placeholder 提示
+            };
+            recognition.onend = () => {
+                btnMic.classList.remove('recording');
+                addBase.placeholder = "輸入原型 ";
+            };
             
             btnMic.addEventListener('click', () => {
+                // 1. 若已經在錄音中，執行停止並立即移除樣式
                 if (btnMic.classList.contains('recording')) {
-                    recognition.stop();
-                    return;
-                }
-
-                // 立即加入樣式，讓 iOS 使用者有感 (橘色+動態)
-                btnMic.classList.add('recording');
-
-                // 點擊時先檢查是否為安全連線 (HTTPS)
-                if (!window.isSecureContext && location.hostname !== 'localhost') {
-                    alert('語音功能僅支援 HTTPS 安全連線。手機測試請務必使用 HTTPS 環境。');
+                    try {
+                        recognition.stop();
+                    } catch (e) {
+                        recognition.abort(); // 強制中止
+                    }
                     btnMic.classList.remove('recording');
                     return;
                 }
 
+                // 2. 檢查安全性上下文 (iOS 必要)
+                if (!window.isSecureContext && location.hostname !== 'localhost') {
+                    alert('【連線不安全】\niOS 規定必須使用 HTTPS 網址才能開啟麥克風。請確認網址開頭為 https://');
+                    return;
+                }
+
+                // 3. 嘗試啟動並提供視覺回饋
                 try {
+                    // 先嘗試停止舊的實例以確保乾淨啟動
+                    try { recognition.abort(); } catch(e) {}
+                    
                     recognition.start();
+                    // 啟動成功後加入樣式（iOS 有時 start() 後才會真正變色）
+                    btnMic.classList.add('recording');
                 } catch (err) {
                     console.error("啟動失敗:", err);
                     btnMic.classList.remove('recording');
