@@ -336,17 +336,20 @@ tr:hover {
         order: 2;
     }
     #add-mean {
-        flex: 1 1 calc(50% - 5px) !important; /* 第三列：中文解釋 */
+        flex: 1 1 100% !important; /* 手機版讓中文解釋單獨一列，空間較充裕 */
         order: 4;
     }
-    #add-type {
-        flex: 1 1 calc(50% - 5px) !important; /* 第三列：模式 */
+    #add-ipa {
+        flex: 1 1 calc(60% - 5px) !important; /* 顯示音標輸入框並設定較寬比例 */
         order: 5;
     }
-    #add-ipa { display: none; }
+    #add-type {
+        flex: 1 1 calc(40% - 5px) !important; /* 模式與音標並排 */
+        order: 6;
+    }
     
     .btn-add {
-        order: 6;
+        order: 7;
         margin: 5px auto 0;
         width: 48px;
         height: 48px;

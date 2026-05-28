@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="style.css">
     <style>
         /* 確保 PC 版輸入框比例優化 */
+        /* PC specific styles */
         @media (min-width: 601px) {
             .add-bar { display: flex; gap: 10px; align-items: center; }
             .add-input-group { flex: 4; display: flex; gap: 5px; align-items: center; }
@@ -359,14 +360,27 @@
         const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (Recognition) {
             const recognition = new Recognition();
+            recognition.lang = 'en-US'; // 指定為英文辨識以提高準確度
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
             recognition.onstart = () => btnMic.classList.add('recording');
             recognition.onend = () => btnMic.classList.remove('recording');
+            
             recognition.onresult = (e) => {
                 addBase.value = e.results[0][0].transcript.toLowerCase();
                 // 語音輸入後也觸發自動填寫
                 addPast.value = ''; // 清空舊的預測
                 addPp.value = ''; // 清空舊的預測
                 performAutoFill();
+            };
+
+            recognition.onerror = (e) => {
+                console.error('語音辨識錯誤:', e.error);
+                btnMic.classList.remove('recording');
+                if (e.error === 'not-allowed') {
+                    alert('無法存取麥克風。請確認已開啟權限，且正在 HTTPS 或 localhost 環境下執行。');
+                }
             };
             btnMic.addEventListener('click', () => recognition.start());
         }
