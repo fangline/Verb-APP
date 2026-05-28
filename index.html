@@ -359,16 +359,23 @@
         // 語音辨識
         const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (Recognition) {
-            const recognition = new Recognition();
+            let recognition = new Recognition();
             recognition.lang = 'en-US'; // 指定為英文辨識以提高準確度
             recognition.interimResults = false; 
             recognition.maxAlternatives = 1;
+            recognition.continuous = false; // iOS 建議設為 false 以提高穩定性
 
             recognition.onstart = () => btnMic.classList.add('recording');
             recognition.onend = () => btnMic.classList.remove('recording');
             
-            // 點擊時先檢查是否為安全連線 (HTTPS)
             btnMic.addEventListener('click', () => {
+                // 若正在錄音中再次點擊則停止（防止 iOS 重複觸發報錯）
+                if (btnMic.classList.contains('recording')) {
+                    recognition.stop();
+                    return;
+                }
+
+                // 點擊時先檢查是否為安全連線 (HTTPS)
                 if (!window.isSecureContext && location.hostname !== 'localhost') {
                     alert('語音功能僅支援 HTTPS 安全連線。手機測試請務必使用 HTTPS 環境。');
                 }
@@ -387,10 +394,14 @@
                 console.error('語音辨識錯誤:', e.error);
                 btnMic.classList.remove('recording');
                 if (e.error === 'not-allowed') {
-                    alert('無法存取麥克風。請確認已開啟權限，且正在 HTTPS 或 localhost 環境下執行。');
+                    alert('無法存取麥克風。請檢查：\n1. 網址是否為 HTTPS 安全連線。\n2. 已在系統設定中允許瀏覽器使用麥克風。\n3. iOS 使用者請務必使用 Safari 瀏覽器，避免使用 Line/FB 內建瀏覽器。');
+                } else if (e.error === 'network') {
+                    alert('網路連線異常，語音辨識失敗。');
                 }
             };
-            btnMic.addEventListener('click', () => recognition.start());
+        } else {
+            btnMic.style.opacity = '0.5';
+            btnMic.title = '此瀏覽器不支援語音輸入';
         }
 
         btnToggleDelete.addEventListener('click', () => {
