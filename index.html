@@ -369,17 +369,27 @@
             recognition.onend = () => btnMic.classList.remove('recording');
             
             btnMic.addEventListener('click', () => {
-                // 若正在錄音中再次點擊則停止（防止 iOS 重複觸發報錯）
                 if (btnMic.classList.contains('recording')) {
                     recognition.stop();
                     return;
                 }
 
+                // 立即加入樣式，讓 iOS 使用者有感 (橘色+動態)
+                btnMic.classList.add('recording');
+
                 // 點擊時先檢查是否為安全連線 (HTTPS)
                 if (!window.isSecureContext && location.hostname !== 'localhost') {
                     alert('語音功能僅支援 HTTPS 安全連線。手機測試請務必使用 HTTPS 環境。');
+                    btnMic.classList.remove('recording');
+                    return;
                 }
-                recognition.start();
+
+                try {
+                    recognition.start();
+                } catch (err) {
+                    console.error("啟動失敗:", err);
+                    btnMic.classList.remove('recording');
+                }
             });
 
             recognition.onresult = (e) => {
