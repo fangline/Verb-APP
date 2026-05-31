@@ -253,14 +253,8 @@
             let pp = w + "ed";
             let type = "A-B-B";
 
-            // 1. 常見不規則模式預測
-            if (w.endsWith('eep') && w.length > 3) { 
-                past = pp = w.slice(0, -3) + "ept"; // keep, sleep, feel
-            } else if (w.endsWith('ell') && (w === 'tell' || w === 'sell')) {
-                past = pp = w.slice(0, -3) + "old";
-            } else if (w.endsWith('ind') && w.length > 3) {
-                past = pp = w.slice(0, -3) + "ound"; // find, bind
-            } else if (w.match(/.[i]([n][gk]|[m]|[n])$/)) { // sing, ring, drink, swim, begin
+            // 1. A-B-C 模式 (三態不同)
+            if (w.match(/.[i]([n][gk]|[m]|[n])$/)) { // sing, ring, drink, swim, begin
                 past = w.replace(/i([^i]*)$/, 'a$1');
                 pp = w.replace(/i([^i]*)$/, 'u$1');
                 type = "A-B-C";
@@ -272,20 +266,45 @@
                 past = w.replace('ow', 'ew');
                 pp = w.replace('ow', 'own');
                 type = "A-B-C";
-            } else if (w.match(/.[i]v[e]$/) && w.length > 3) { // drive, strive
-                past = w.replace('ive', 'ove');
-                pp = w.replace('ive', 'iven');
+            } else if (w.match(/.[i]([^aeiou])e$/) && (w.length > 3)) { // write, ride, drive, rise
+                const char = w.match(/.[i]([^aeiou])e$/)[1];
+                past = w.replace(`i${char}e`, `o${char}e`);
+                // written, ridden 需要雙打子音
+                const doubleChar = (char === 't' || char === 'd') ? char + char : char;
+                pp = w.replace(`i${char}e`, `i${doubleChar}en`);
+                type = "A-B-C";
+            } else if (w.match(/eak$/) || w === 'steal' || w === 'weave') { // speak, break, steal
+                past = w.replace(/ea(.)$/, 'o$1e');
+                pp = w.replace(/ea(.)$/, 'o$1en');
+                type = "A-B-C";
+            } else if (w.match(/ear$/) && w !== 'near' && w !== 'fear') { // wear, tear, bear
+                past = w.replace('ear', 'ore');
+                pp = w.replace('ear', 'orn');
                 type = "A-B-C";
             } else if (w === 'fly') {
                 past = 'flew'; pp = 'flown'; type = 'A-B-C';
-            } else if (w === 'draw') {
-                past = 'drew'; pp = 'drawn'; type = 'A-B-C';
+            } else if (w === 'see') {
+                past = 'saw'; pp = 'seen'; type = 'A-B-C';
+            } else if (w === 'go') { 
+                past = 'went'; pp = 'gone'; type = 'A-B-C';
+            } else if (w === 'do') {
+                past = 'did'; pp = 'done'; type = 'A-B-C';
+            }
+            
+            // 2. A-B-B 模式 (過去式與 PP 相同)
+            else if (w.endsWith('eep') && w.length > 3) { 
+                past = pp = w.slice(0, -3) + "ept"; // keep, sleep, feel
+            } else if (w.endsWith('ell') && (w === 'tell' || w === 'sell')) {
+                past = pp = w.slice(0, -3) + "old";
+            } else if (w.endsWith('ind') && w.length > 3) {
+                past = pp = w.slice(0, -3) + "ound"; // find, bind
             } else if (w.endsWith('stand') && w.length >= 5) { // stand, understand
                 past = pp = w.slice(0, -5) + "stood";
             } else if (w.match(/.[e][e][bcdglmnpt]$/)) { // meet, feed, bleed, speed
                 past = pp = w.replace('ee', 'e');
             } else if (w === 'lead' || w === 'read') {
                 past = pp = (w === 'lead') ? 'led' : 'read';
+                if (w === 'read') type = "A-A-A"; // read 三態拼寫相同但讀音不同
             } else if (w === 'say' || w === 'pay' || w === 'lay') {
                 past = pp = w.slice(0, -2) + "aid";
             } else if ((w.endsWith('atch') || w.endsWith('each')) && w.length > 4) { 
@@ -293,10 +312,17 @@
             } else if (w === 'bring' || w === 'buy' || w === 'fight' || w === 'think' || w === 'seek') {
                 const stems = { bring:'brough', buy:'bough', fight:'fough', think:'though', seek:'sough' };
                 past = pp = stems[w] + "t";
-            } else if (w === 'go') { 
-                past = 'went'; pp = 'gone'; type = 'A-B-C';
+            } else if (w.match(/.[n|l]d$/) && (w === 'send' || w === 'lend' || w === 'bend' || w === 'build')) {
+                past = pp = w.slice(0, -1) + "t"; // send -> sent
             }
-            // 2. 規則變化規則 (-ed)
+
+            // 3. A-A-A 模式 (特例處理)
+            else if (['cut', 'put', 'cost', 'hurt', 'hit', 'let', 'set', 'shut', 'split'].includes(w)) {
+                past = pp = w;
+                type = "A-A-A";
+            }
+
+            // 4. 規則變化 (-ed)
             else if (w.endsWith('e')) {
                 past = pp = w + "d";
             } else if (w.endsWith('y') && !/[aeiou]y$/.test(w)) {
