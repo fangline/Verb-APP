@@ -8,8 +8,26 @@
     <title>動詞三態字典表 - Verb Conjugation</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* 確保 PC 版輸入框比例優化 */
-        /* PC specific styles */
+        /* 新增欄位通用樣式：確保音標框在所有裝置上都保持精簡 */
+        .input-with-hint { display: flex; flex-direction: column; gap: 2px; }
+        .ipa-input-sub { 
+            font-size: 11px !important; 
+            height: 24px !important; 
+            border-style: dashed !important; 
+            background-color: #fcfcfc; 
+            color: #555; 
+            padding: 2px 5px; 
+        }
+
+        /* 手機版佈局優化 (600px 以下) */
+        @media (max-width: 600px) {
+            .add-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            .add-input-group, #add-mean, .btn-add { grid-column: span 2; }
+            .input-with-hint, #add-ipa, #add-type { grid-column: span 1; }
+            .add-bar input, .add-bar select { width: 100%; box-sizing: border-box; }
+        }
+
+        /* PC 版比例優化 (601px 以上) */
         @media (min-width: 601px) {
             .add-bar { display: flex; gap: 10px; align-items: center; }
             .add-input-group { flex: 4; display: flex; gap: 5px; align-items: center; }
@@ -50,12 +68,14 @@
         </div>
         <div class="input-with-hint">
             <input type="text" id="add-past" placeholder="過去式 (Past)">
+            <input type="text" id="add-past-ipa" class="ipa-input-sub" placeholder="過去式音標">
         </div>
         <div class="input-with-hint">
             <input type="text" id="add-pp" placeholder="過去分詞 (P.P.)">
+            <input type="text" id="add-pp-ipa" class="ipa-input-sub" placeholder="P.P. 音標">
         </div>
-        <input type="text" id="add-mean" placeholder="中文解釋...">
-        <input type="text" id="add-ipa" placeholder="音標 (如: /hɜrt/)">
+        <input type="text" id="add-mean" placeholder="解釋">
+        <input type="text" id="add-ipa" placeholder="音標">
         <select id="add-type" title="選擇變化模式">
             <option value="A-B-B">A-B-B (常見)</option>
             <option value="A-B-C">A-B-C</option>
@@ -147,6 +167,8 @@
         const addPp = document.getElementById('add-pp');
         const addMean = document.getElementById('add-mean');
         const addIpa = document.getElementById('add-ipa');
+        const addPastIpa = document.getElementById('add-past-ipa');
+        const addPpIpa = document.getElementById('add-pp-ipa');
         const addType = document.getElementById('add-type');
         const btnConfirmAdd = document.getElementById('btn-confirm-add');
 
@@ -160,91 +182,132 @@
             return str;
         };
 
-        // 根據發音規則預測過去式/過去分詞的音標 (-ed 規則)
-        const generatePastIpa = (baseIpa, baseWord, pastWord) => {
-            if (!pastWord) return "";
+        // 根據發音規則或不規則模式，優化過去式/過去分詞的音標預測
+        const generatePastIpa = (baseIpa, baseWord, targetWord) => {
+            if (!targetWord || !baseWord) return "";
             let cleanIpa = (baseIpa || "").replace(/\//g, '').trim();
-            
-            // 處理規則變化 (-ed)
-            if (pastWord.toLowerCase().endsWith('ed')) {
-                // 1. 如果完全沒有基礎音標，根據單字結尾進行粗略判斷
+            const w = baseWord.toLowerCase();
+            const t = targetWord.toLowerCase();
+
+            // 1. 處理規則變化 (-ed) 的發音邏輯
+            if (t.endsWith('ed')) {
                 if (!cleanIpa) {
-                    const lastChar = baseWord.toLowerCase().slice(-1);
-                    const lastTwo = baseWord.toLowerCase().slice(-2);
-                    // t, d 結尾 -> /ɪd/
-                    if (['t', 'd'].includes(lastChar) || (lastChar === 'e' && ['t', 'd'].includes(baseWord.slice(-2, -1)))) {
-                        return "/...ɪd/";
-                    }
-                    // 無聲子音結尾 -> /t/
-                    if (['p', 'k', 'f', 's'].includes(lastChar) || ['sh', 'ch'].includes(lastTwo)) {
-                        return "/...t/";
-                    }
+                    // 若無基礎音標，根據拼寫結尾粗略判斷
+                    if (w.endsWith('t') || w.endsWith('d')) return "/...ɪd/";
+                    if (['p', 'k', 'f', 's', 'x'].some(s => w.endsWith(s)) || ['sh', 'ch'].some(s => w.endsWith(s))) return "/...t/";
                     return "/...d/";
                 }
-
-                // 2. 有基礎音標時，根據最後一個音位進行精準判斷
                 const lastPhoneme = cleanIpa.slice(-1);
-                if (lastPhoneme === 't' || lastPhoneme === 'd') {
-                    return `/${cleanIpa}ɪd/`;
-                }
-                // 無聲子音結尾 (p, k, f, s, ʃ, θ) -> /t/ (tʃ 亦包含在內)
-                if (['p', 'k', 'f', 's', 'ʃ', 'θ'].includes(lastPhoneme)) {
-                    return `/${cleanIpa}t/`;
-                }
-                // 其他有聲結尾 (母音或有聲子音) -> /d/
+                // 結尾為 /t/ 或 /d/ -> /ɪd/
+                if (lastPhoneme === 't' || lastPhoneme === 'd') return `/${cleanIpa}ɪd/`;
+                // 無聲子音結尾 (p, k, f, s, ʃ, θ, tʃ) -> /t/
+                const unvoiced = ['p', 'k', 'f', 's', 'ʃ', 'θ'];
+                if (unvoiced.includes(lastPhoneme) || cleanIpa.endsWith('tʃ') || cleanIpa.endsWith('ʃ')) return `/${cleanIpa}t/`;
+                // 其他有聲結尾 -> /d/
                 return `/${cleanIpa}d/`;
             }
-            return ""; // 不規則變化暫不自動生成
+
+            // 2. 處理常見不規則音變模式 (需有基礎音標作為轉換基準)
+            if (!cleanIpa) return "";
+            
+            // i -> a/u 模式 (如 sing/sang: /sɪŋ/ -> /sæŋ/)
+            if (w.match(/.[i]([n][gk]|[m]|[n])$/) && (t.includes('a') || t.includes('u'))) {
+                const replacement = t.includes('a') ? 'æ' : 'ʌ';
+                return `/${cleanIpa.replace('ɪ', replacement)}/`;
+            }
+            // eep -> ept 模式 (如 keep/kept: /kip/ -> /kɛpt/)
+            if (w.endsWith('eep') && t.endsWith('ept')) return `/${cleanIpa.replace('ip', 'ɛpt')}/`;
+            // ell -> old 模式 (如 tell/told: /tɛl/ -> /toʊld/)
+            if (w.endsWith('ell') && t.endsWith('old')) return `/${cleanIpa.replace('ɛl', 'oʊld')}/`;
+            // ind -> ound 模式 (如 find/found: /faɪnd/ -> /faʊnd/)
+            if (w.endsWith('ind') && t.endsWith('ound')) return `/${cleanIpa.replace('aɪnd', 'aʊnd')}/`;
+            // ake -> ook/aken 模式 (如 take/took: /teɪk/ -> /tʊk/)
+            if (w.endsWith('ake') && t.endsWith('ook')) return `/${cleanIpa.replace('eɪk', 'ʊk')}/`;
+            if (w.endsWith('ake') && t.endsWith('aken')) return `/${cleanIpa.replace('eɪk', 'eɪkən')}/`;
+            // ow -> ew/own 模式 (如 know/knew: /noʊ/ -> /nu/)
+            if (w.endsWith('ow') && t.endsWith('ew')) return `/${cleanIpa.replace('oʊ', 'u')}/`;
+            if (w.endsWith('ow') && t.endsWith('own')) return `/${cleanIpa.replace('oʊ', 'oʊn')}/`;
+            // y/aw -> ew 模式 (如 fly/flew: /flaɪ/ -> /flu/, draw/drew: /drɔ/ -> /dru/)
+            if ((w.endsWith('fly') || w.endsWith('raw')) && t.endsWith('ew')) {
+                return `/${cleanIpa.replace(/(aɪ|ɔ)$/, 'u')}/`;
+            }
+            // ee/ea -> e 模式 (如 meet/met: /mit/ -> /mɛt/, lead/led: /lid/ -> /lɛd/)
+            if ((w.includes('ee') || w.includes('ea')) && t.length === w.length - 1) {
+                return `/${cleanIpa.replace(/i/, 'ɛ')}/`;
+            }
+            // stand -> stood 模式 (/stænd/ -> /stʊd/)
+            if (w.endsWith('stand') && t.endsWith('stood')) return `/${cleanIpa.replace('ænd', 'ʊd')}/`;
+            // 特殊處理：say -> said (/seɪ/ -> /sɛd/)
+            if (w === 'say' && t === 'said') return "/sɛd/";
+            if (w === 'pay' && t === 'paid') return "/peɪd/";
+            if (w === 'go' && t === 'went') return "/wɛnt/";
+            if (w === 'go' && t === 'gone') return "/ɡɔːn/";
+
+            return ""; 
         };
 
         let autoFillTimeout;
         const predictForms = (word) => {
-            // 預設為規則變化
-            let past = word + "ed";
-            let isIrregular = false; // 標記是否為不規則預測
+            const w = word.toLowerCase();
+            let past = w + "ed";
+            let pp = w + "ed";
+            let type = "A-B-B";
 
-            // 1. 特殊類規律不規則變化
-            if (word.endsWith('eep') && word.length > 3) { 
-                past = word.slice(0, -3) + "ept"; // keep -> kept, sleep -> slept
-                isIrregular = true;
-            } else if (word.endsWith('ell') && (word === 'tell' || word === 'sell')) {
-                past = word.slice(0, -3) + "old"; // tell -> told, sell -> sold
-                isIrregular = true;
-            } else if (word.endsWith('ind') && word.length > 3) {
-                past = word.slice(0, -3) + "ound"; // find -> found, bind -> bound
-                isIrregular = true;
-            } else if (word === 'say') {
-                past = "said";
-                isIrregular = true;
-            } else if (word.endsWith('atch') && word.length > 4) { // catch -> caught
-                past = word.slice(0, -4) + "aught";
-                isIrregular = true;
-            } else if (word.endsWith('each') && word.length > 4) { // teach -> taught
-                past = word.slice(0, -4) + "aught";
-                isIrregular = true;
-            } else if (word === 'pay') {
-                past = "paid";
-                isIrregular = true;
-            } else if (word === 'lay') {
-                past = "laid";
-                isIrregular = true;
+            // 1. 常見不規則模式預測
+            if (w.endsWith('eep') && w.length > 3) { 
+                past = pp = w.slice(0, -3) + "ept"; // keep, sleep, feel
+            } else if (w.endsWith('ell') && (w === 'tell' || w === 'sell')) {
+                past = pp = w.slice(0, -3) + "old";
+            } else if (w.endsWith('ind') && w.length > 3) {
+                past = pp = w.slice(0, -3) + "ound"; // find, bind
+            } else if (w.match(/.[i]([n][gk]|[m]|[n])$/)) { // sing, ring, drink, swim, begin
+                past = w.replace(/i([^i]*)$/, 'a$1');
+                pp = w.replace(/i([^i]*)$/, 'u$1');
+                type = "A-B-C";
+            } else if (w.endsWith('ake') && w.length > 3 && w !== 'bake' && w !== 'fake') { 
+                past = w.replace('ake', 'ook');
+                pp = w.replace('ake', 'aken');
+                type = "A-B-C";
+            } else if (w.match(/.[o]w$/) && w !== 'show' && w !== 'flow') { // know, grow, blow
+                past = w.replace('ow', 'ew');
+                pp = w.replace('ow', 'own');
+                type = "A-B-C";
+            } else if (w.match(/.[i]v[e]$/) && w.length > 3) { // drive, strive
+                past = w.replace('ive', 'ove');
+                pp = w.replace('ive', 'iven');
+                type = "A-B-C";
+            } else if (w === 'fly') {
+                past = 'flew'; pp = 'flown'; type = 'A-B-C';
+            } else if (w === 'draw') {
+                past = 'drew'; pp = 'drawn'; type = 'A-B-C';
+            } else if (w.endsWith('stand') && w.length >= 5) { // stand, understand
+                past = pp = w.slice(0, -5) + "stood";
+            } else if (w.match(/.[e][e][bcdglmnpt]$/)) { // meet, feed, bleed, speed
+                past = pp = w.replace('ee', 'e');
+            } else if (w === 'lead' || w === 'read') {
+                past = pp = (w === 'lead') ? 'led' : 'read';
+            } else if (w === 'say' || w === 'pay' || w === 'lay') {
+                past = pp = w.slice(0, -2) + "aid";
+            } else if ((w.endsWith('atch') || w.endsWith('each')) && w.length > 4) { 
+                past = pp = w.slice(0, -4) + "aught"; // catch, teach
+            } else if (w === 'bring' || w === 'buy' || w === 'fight' || w === 'think' || w === 'seek') {
+                const stems = { bring:'brough', buy:'bough', fight:'fough', think:'though', seek:'sough' };
+                past = pp = stems[w] + "t";
+            } else if (w === 'go') { 
+                past = 'went'; pp = 'gone'; type = 'A-B-C';
             }
-            // 2. 結尾為 e (如 bake -> baked)
-            else if (word.endsWith('e')) {
-                past = word + "d";
-            } 
-            // 3. 結尾為 子音 + y (如 study -> studied)
-            else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) {
-                past = word.slice(0, -1) + "ied";
-            }
-            // 4. 重複字尾規則 (短母音 + 單子音，如 stop -> stopped)
-            else if (word.match(/[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]$/)) {
-                const lastChar = word.slice(-1);
+            // 2. 規則變化規則 (-ed)
+            else if (w.endsWith('e')) {
+                past = pp = w + "d";
+            } else if (w.endsWith('y') && !/[aeiou]y$/.test(w)) {
+                past = pp = w.slice(0, -1) + "ied";
+            } else if (w.match(/[bcdfghjklmnpqrstvwxyz][aeiou][bcdfghjklmnpqrstvwxyz]$/)) {
+                const lastChar = w.slice(-1);
                 if (!['y','w','x'].includes(lastChar)) {
-                    past = word + lastChar + "ed";
+                    past = pp = w + lastChar + "ed";
                 }
             }
-            return { past, isIrregular };
+            return { past, pp, type };
         };
 
         const fetchIpaFromApi = async (word) => {
@@ -286,9 +349,11 @@
                 addPast.value = found.past.us[0];
                 addPp.value = found.pp.us[0];
                 addIpa.value = ensureSlashes(found.base.us[1] || found.base.uk[1] || "");
+                addPastIpa.value = ensureSlashes(found.past.us[1] || "");
+                addPpIpa.value = ensureSlashes(found.pp.us[1] || "");
                 addType.value = found.type;
                 
-                [addMean, addIpa, addType, addPast, addPp].forEach(el => {
+                [addMean, addIpa, addType, addPast, addPp, addPastIpa, addPpIpa].forEach(el => {
                     el.style.backgroundColor = '#e8f0fe';
                     setTimeout(() => el.style.backgroundColor = '', 500);
                 });
@@ -301,18 +366,26 @@
             clearTimeout(autoFillTimeout);
             autoFillTimeout = setTimeout(async () => {
                 if (note) note.style.display = 'block';
-                addType.value = "A-B-B"; // 預測模式預設為 A-B-B
-                const { past: predictedPast, isIrregular } = predictForms(val); // 獲取預測結果及是否為不規則
+                const { past: predPast, pp: predPp, type: predType } = predictForms(val);
                 
-                addPast.value = predictedPast;
-                addPp.value = predictedPast; // 對於 A-B-B 模式，過去分詞與過去式相同
+                addPast.value = predPast;
+                addPp.value = predPp;
+                addType.value = predType;
 
                 const ipa = await fetchIpaFromApi(val);
                 let finalIpaToSet = ensureSlashes(ipa.us || ipa.uk || "");
                 
-                // 若 API 查無且目前欄位為空，則使用單字拼寫作為參考音標，確保斜線一直出現
                 if (!finalIpaToSet && !addIpa.value) finalIpaToSet = ensureSlashes(val);
-                if (finalIpaToSet) addIpa.value = finalIpaToSet;
+                
+                if (finalIpaToSet) {
+                    addIpa.value = finalIpaToSet;
+                    // 自動預測過去式和 PP 的音標，僅在有結果時填入
+                    const pIpa = generatePastIpa(finalIpaToSet, val, predPast);
+                    if (pIpa) addPastIpa.value = pIpa;
+                    
+                    const ppIpa = generatePastIpa(finalIpaToSet, val, predPp);
+                    if (ppIpa) addPpIpa.value = ppIpa;
+                }
 
                 if (addIpa.value) {
                     addIpa.style.backgroundColor = '#d1f2eb';
@@ -323,10 +396,33 @@
 
         addBase.addEventListener('input', performAutoFill);
 
+        // 當手動修改原型音標時，同步更新過去式與 P.P. 的音標預測
+        addIpa.addEventListener('input', () => {
+            const baseVal = addBase.value.trim();
+            const baseIpa = addIpa.value.trim();
+            if (baseVal && baseIpa) {
+                const pIpa = generatePastIpa(baseIpa, baseVal, addPast.value.trim());
+                if (pIpa) addPastIpa.value = pIpa;
+                
+                const ppIpa = generatePastIpa(baseIpa, baseVal, addPp.value.trim());
+                if (ppIpa) addPpIpa.value = ppIpa;
+            }
+        });
+
+        // 當手動修改過去式或過去分詞單字時，同步更新其音標預測
+        addPast.addEventListener('input', () => {
+            const pIpa = generatePastIpa(addIpa.value, addBase.value, addPast.value.trim());
+            if (pIpa) addPastIpa.value = pIpa;
+        });
+        addPp.addEventListener('input', () => {
+            const ppIpa = generatePastIpa(addIpa.value, addBase.value, addPp.value.trim());
+            if (ppIpa) addPpIpa.value = ppIpa;
+        });
+
         // 清除按鈕功能 (掃把)
         btnClearInput.addEventListener('click', () => {
             addBase.value = ''; addPast.value = ''; addPp.value = '';
-            addMean.value = ''; addIpa.value = '';
+            addMean.value = ''; addIpa.value = ''; addPastIpa.value = ''; addPpIpa.value = '';
             const note = document.getElementById('autofill-note');
             if (note) note.style.display = 'none';
             addBase.focus();
@@ -390,26 +486,27 @@
             if (!base || !mean) return alert("請填寫單字與解釋");
             
             const finalIpa = ensureSlashes(addIpa.value);
-            const { past: predPast } = predictForms(base);
-            const pastText = addPast.value || predPast;
-            const ppText = addPp.value || (addType.value === 'A-B-B' ? pastText : predPast);
-            
-            // 自動生成過去式與 P.P. 的參考音標
-            const predictedPastIpa = generatePastIpa(finalIpa, base, pastText);
-            const predictedPpIpa = generatePastIpa(finalIpa, base, ppText);
+            const predicted = predictForms(base);
+            const pastText = addPast.value || predicted.past;
+            const ppText = addPp.value || predicted.pp;
+
+            // 優先使用手動修改的音標，若欄位為空則使用自動生成
+            const pastIpa = ensureSlashes(addPastIpa.value) || generatePastIpa(finalIpa, base, pastText);
+            const ppIpa = ensureSlashes(addPpIpa.value) || generatePastIpa(finalIpa, base, ppText);
 
             const newVerb = {
                 id: Date.now(),
                 type: addType.value,
                 mean: mean,
                 base: { us: [base, finalIpa], uk: [base, finalIpa] },
-                past: { us: [pastText, predictedPastIpa], uk: [pastText, predictedPastIpa] },
-                pp: { us: [ppText, predictedPpIpa], uk: [ppText, predictedPpIpa] }
+                past: { us: [pastText, pastIpa], uk: [pastText, pastIpa] },
+                pp: { us: [ppText, ppIpa], uk: [ppText, ppIpa] }
             };
 
             customVerbs.push(newVerb);
             localStorage.setItem('customVerbs', JSON.stringify(customVerbs));
             addBase.value = ''; addMean.value = ''; addPast.value = ''; addPp.value = ''; addIpa.value = '';
+            addPastIpa.value = ''; addPpIpa.value = '';
             renderTable();
             const note = document.getElementById('autofill-note');
             if (note) note.style.display = 'none';
