@@ -150,6 +150,53 @@
         const addType = document.getElementById('add-type');
         const btnConfirmAdd = document.getElementById('btn-confirm-add');
 
+        // 輔助函式：確保音標包含前後斜線 /
+        const ensureSlashes = (val) => {
+            if (!val || typeof val !== 'string') return "";
+            let str = val.trim();
+            if (!str) return "";
+            if (!str.startsWith('/')) str = '/' + str;
+            if (!str.endsWith('/')) str = str + '/';
+            return str;
+        };
+
+        // 根據發音規則預測過去式/過去分詞的音標 (-ed 規則)
+        const generatePastIpa = (baseIpa, baseWord, pastWord) => {
+            if (!pastWord) return "";
+            let cleanIpa = (baseIpa || "").replace(/\//g, '').trim();
+            
+            // 處理規則變化 (-ed)
+            if (pastWord.toLowerCase().endsWith('ed')) {
+                // 1. 如果完全沒有基礎音標，根據單字結尾進行粗略判斷
+                if (!cleanIpa) {
+                    const lastChar = baseWord.toLowerCase().slice(-1);
+                    const lastTwo = baseWord.toLowerCase().slice(-2);
+                    // t, d 結尾 -> /ɪd/
+                    if (['t', 'd'].includes(lastChar) || (lastChar === 'e' && ['t', 'd'].includes(baseWord.slice(-2, -1)))) {
+                        return "/...ɪd/";
+                    }
+                    // 無聲子音結尾 -> /t/
+                    if (['p', 'k', 'f', 's'].includes(lastChar) || ['sh', 'ch'].includes(lastTwo)) {
+                        return "/...t/";
+                    }
+                    return "/...d/";
+                }
+
+                // 2. 有基礎音標時，根據最後一個音位進行精準判斷
+                const lastPhoneme = cleanIpa.slice(-1);
+                if (lastPhoneme === 't' || lastPhoneme === 'd') {
+                    return `/${cleanIpa}ɪd/`;
+                }
+                // 無聲子音結尾 (p, k, f, s, ʃ, θ) -> /t/ (tʃ 亦包含在內)
+                if (['p', 'k', 'f', 's', 'ʃ', 'θ'].includes(lastPhoneme)) {
+                    return `/${cleanIpa}t/`;
+                }
+                // 其他有聲結尾 (母音或有聲子音) -> /d/
+                return `/${cleanIpa}d/`;
+            }
+            return ""; // 不規則變化暫不自動生成
+        };
+
         let autoFillTimeout;
         const predictForms = (word) => {
             // 預設為規則變化
@@ -210,8 +257,8 @@
                     if (entry.phonetics && entry.phonetics.length > 0) {
                         const usEntry = entry.phonetics.find(p => p.audio?.includes('-us') || p.sourceUrl?.includes('cambridge'));
                         const ukEntry = entry.phonetics.find(p => p.audio?.includes('-uk') || !p.audio);
-                        usIpa = (usEntry?.text || entry.phonetic || "").replace(/\//g, '');
-                        ukIpa = (ukEntry?.text || entry.phonetic || "").replace(/\//g, '');
+                        usIpa = (usEntry?.text || entry.phonetic || "");
+                        ukIpa = (ukEntry?.text || entry.phonetic || "");
                     }
                     return { us: usIpa, uk: ukIpa };
                 }
@@ -238,7 +285,7 @@
                 addMean.value = found.mean;
                 addPast.value = found.past.us[0];
                 addPp.value = found.pp.us[0];
-                addIpa.value = (found.base.us[1] || found.base.uk[1] || "").replace(/\//g, '');
+                addIpa.value = ensureSlashes(found.base.us[1] || found.base.uk[1] || "");
                 addType.value = found.type;
                 
                 [addMean, addIpa, addType, addPast, addPp].forEach(el => {
@@ -261,7 +308,11 @@
                 addPp.value = predictedPast; // 對於 A-B-B 模式，過去分詞與過去式相同
 
                 const ipa = await fetchIpaFromApi(val);
-                addIpa.value = ipa.us || ipa.uk || "";
+                let finalIpaToSet = ensureSlashes(ipa.us || ipa.uk || "");
+                
+                // 若 API 查無且目前欄位為空，則使用單字拼寫作為參考音標，確保斜線一直出現
+                if (!finalIpaToSet && !addIpa.value) finalIpaToSet = ensureSlashes(val);
+                if (finalIpaToSet) addIpa.value = finalIpaToSet;
 
                 if (addIpa.value) {
                     addIpa.style.backgroundColor = '#d1f2eb';
@@ -337,15 +388,23 @@
             const base = addBase.value.trim();
             const mean = addMean.value.trim();
             if (!base || !mean) return alert("請填寫單字與解釋");
-
+            
+            const finalIpa = ensureSlashes(addIpa.value);
             const { past: predPast } = predictForms(base);
+            const pastText = addPast.value || predPast;
+            const ppText = addPp.value || (addType.value === 'A-B-B' ? pastText : predPast);
+            
+            // 自動生成過去式與 P.P. 的參考音標
+            const predictedPastIpa = generatePastIpa(finalIpa, base, pastText);
+            const predictedPpIpa = generatePastIpa(finalIpa, base, ppText);
+
             const newVerb = {
                 id: Date.now(),
                 type: addType.value,
                 mean: mean,
-                base: { us: [base, addIpa.value], uk: [base, addIpa.value] },
-                past: { us: [addPast.value || predPast, ""], uk: [addPast.value || predPast, ""] },
-                pp: { us: [addPp.value || predPast, ""], uk: [addPp.value || predPast, ""] }
+                base: { us: [base, finalIpa], uk: [base, finalIpa] },
+                past: { us: [pastText, predictedPastIpa], uk: [pastText, predictedPastIpa] },
+                pp: { us: [ppText, predictedPpIpa], uk: [ppText, predictedPpIpa] }
             };
 
             customVerbs.push(newVerb);
@@ -489,17 +548,33 @@
             renderTable();
         });
 
+        let currentUtterance = null; // 放在全域避免被垃圾回收導致發音中斷
+
         const speak = (text, element) => {
+            if (!window.speechSynthesis) return;
+            
+            // 1. 先取消正在進行的所有語音，確保新的語音能立即執行
             window.speechSynthesis.cancel();
+            
+            // 2. 清除所有正在發音的 UI 樣式
             document.querySelectorAll('.speaking').forEach(el => el.classList.remove('speaking'));
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = currentLang === 'us' ? 'en-US' : 'en-GB';
-            msg.rate = 0.85;
+
+            if (!text) return;
+
+            // 3. 建立 Utterance 物件並保持引用
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = currentLang === 'us' ? 'en-US' : 'en-GB';
+            currentUtterance.rate = 0.85;
+
             if (element) {
-                msg.onstart = () => element.classList.add('speaking');
-                msg.onend = () => element.classList.remove('speaking');
+                currentUtterance.onstart = () => element.classList.add('speaking');
+                currentUtterance.onend = () => element.classList.remove('speaking');
+                currentUtterance.onerror = () => element.classList.remove('speaking');
             }
-            window.speechSynthesis.speak(msg);
+
+            // 4. 強制喚醒語音引擎並播放
+            window.speechSynthesis.resume();
+            window.speechSynthesis.speak(currentUtterance);
         };
 
         tableBody.addEventListener('click', (e) => {
