@@ -329,6 +329,12 @@
             return { us: "", uk: "" };
         };
 
+        // 輔助函式：將學術音標符號簡化為教學常用符號
+        const normalizeIpa = (ipa) => {
+            if (!ipa) return "";
+            return ipa.replace(/ɹ/g, 'r'); // 將倒 r 轉換為一般 r
+        };
+
         const performAutoFill = async () => {
             const val = addBase.value.trim().toLowerCase();
             const note = document.getElementById('autofill-note');
@@ -373,7 +379,7 @@
                 addType.value = predType;
 
                 const ipa = await fetchIpaFromApi(val);
-                let finalIpaToSet = ensureSlashes(ipa.us || ipa.uk || "");
+                let finalIpaToSet = ensureSlashes(normalizeIpa(ipa.us || ipa.uk || ""));
                 
                 if (!finalIpaToSet && !addIpa.value) finalIpaToSet = ensureSlashes(val);
                 
