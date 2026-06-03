@@ -19,6 +19,21 @@
             padding: 2px 5px; 
         }
 
+        /* 麥克風錄音中動態回饋 */
+        #btn-mic.recording {
+            background-color: #ff4d4d !important;
+            color: white !important;
+            box-shadow: 0 0 12px rgba(255, 77, 77, 0.6);
+            animation: pulse-mic 1.5s infinite;
+        }
+        #btn-mic.recording svg { fill: white; }
+
+        @keyframes pulse-mic {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
         /* 手機版佈局優化 (600px 以下) */
         @media (max-width: 600px) {
             .add-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -685,6 +700,7 @@
                 localStorage.setItem('hiddenDefaultIds', JSON.stringify(hiddenDefaultIds));
                 isDeleteMode = false;
                 btnToggleDelete.innerHTML = manageIcon;
+                document.querySelector('table').classList.remove('delete-mode');
                 btnConfirmDelete.style.display = 'none';
                 if (selectAll) selectAll.checked = false;
                 renderTable();
