@@ -185,9 +185,13 @@
         // 根據發音規則或不規則模式，優化過去式/過去分詞的音標預測
         const generatePastIpa = (baseIpa, baseWord, targetWord) => {
             if (!targetWord || !baseWord) return "";
-            let cleanIpa = (baseIpa || "").replace(/\//g, '').trim();
             const w = baseWord.toLowerCase();
             const t = targetWord.toLowerCase();
+
+            // 如果單字相同（如 A-A-A 或 A-B-A 模式），音標應同步
+            if (w === t) return ensureSlashes(baseIpa);
+
+            let cleanIpa = (baseIpa || "").replace(/\//g, '').trim();
 
             // 1. 處理規則變化 (-ed) 的發音邏輯
             if (t.endsWith('ed')) {
@@ -411,13 +415,11 @@
                 
                 if (finalIpaToSet) {
                     addIpa.value = finalIpaToSet;
-                    // 自動預測過去式和 PP 的音標，僅在有結果時填入
-                    const pIpa = generatePastIpa(finalIpaToSet, val, predPast);
-                    if (pIpa) addPastIpa.value = pIpa;
-                    
-                    const ppIpa = generatePastIpa(finalIpaToSet, val, predPp);
-                    if (ppIpa) addPpIpa.value = ppIpa;
                 }
+
+                // 只要原型單字有變，就根據最新的原型音標同步更新過去式與 PP 的音標預測
+                addPastIpa.value = generatePastIpa(addIpa.value, val, predPast);
+                addPpIpa.value = generatePastIpa(addIpa.value, val, predPp);
 
                 if (addIpa.value) {
                     addIpa.style.backgroundColor = '#d1f2eb';
@@ -429,26 +431,48 @@
         addBase.addEventListener('input', performAutoFill);
 
         // 當手動修改原型音標時，同步更新過去式與 P.P. 的音標預測
-        addIpa.addEventListener('input', () => {
+        addIpa.addEventListener('input', async () => {
             const baseVal = addBase.value.trim();
             const baseIpa = addIpa.value.trim();
             if (baseVal && baseIpa) {
-                const pIpa = generatePastIpa(baseIpa, baseVal, addPast.value.trim());
-                if (pIpa) addPastIpa.value = pIpa;
-                
-                const ppIpa = generatePastIpa(baseIpa, baseVal, addPp.value.trim());
-                if (ppIpa) addPpIpa.value = ppIpa;
+                // 當原型音標被修改時，重新評估過去式和過去分詞的音標
+                // 優先嘗試從 API 獲取當前過去式/過去分詞單字的音標
+                const pastWord = addPast.value.trim();
+                if (pastWord) {
+                    const apiIpa = await fetchIpaFromApi(pastWord);
+                    addPastIpa.value = ensureSlashes(normalizeIpa(apiIpa.us || apiIpa.uk || "")) || generatePastIpa(baseIpa, baseVal, pastWord);
+                } else {
+                    addPastIpa.value = generatePastIpa(baseIpa, baseVal, addPast.value.trim());
+                }
+
+                const ppWord = addPp.value.trim();
+                if (ppWord) {
+                    const apiIpa = await fetchIpaFromApi(ppWord);
+                    addPpIpa.value = ensureSlashes(normalizeIpa(apiIpa.us || apiIpa.uk || "")) || generatePastIpa(baseIpa, baseVal, ppWord);
+                } else {
+                    addPpIpa.value = generatePastIpa(baseIpa, baseVal, addPp.value.trim());
+                }
             }
         });
 
         // 當手動修改過去式或過去分詞單字時，同步更新其音標預測
-        addPast.addEventListener('input', () => {
-            const pIpa = generatePastIpa(addIpa.value, addBase.value, addPast.value.trim());
-            if (pIpa) addPastIpa.value = pIpa;
+        addPast.addEventListener('input', async () => {
+            const pastWord = addPast.value.trim();
+            if (pastWord) {
+                const apiIpa = await fetchIpaFromApi(pastWord);
+                addPastIpa.value = ensureSlashes(normalizeIpa(apiIpa.us || apiIpa.uk || "")) || generatePastIpa(addIpa.value, addBase.value, pastWord);
+            } else {
+                addPastIpa.value = ''; // 清空單字時也清空音標
+            }
         });
-        addPp.addEventListener('input', () => {
-            const ppIpa = generatePastIpa(addIpa.value, addBase.value, addPp.value.trim());
-            if (ppIpa) addPpIpa.value = ppIpa;
+        addPp.addEventListener('input', async () => {
+            const ppWord = addPp.value.trim();
+            if (ppWord) {
+                const apiIpa = await fetchIpaFromApi(ppWord);
+                addPpIpa.value = ensureSlashes(normalizeIpa(apiIpa.us || apiIpa.uk || "")) || generatePastIpa(addIpa.value, addBase.value, ppWord);
+            } else {
+                addPpIpa.value = ''; // 清空單字時也清空音標
+            }
         });
 
         // 清除按鈕功能 (掃把)
@@ -556,14 +580,22 @@
             recognition.onstart = () => {
                 btnMic.classList.add('recording');
                 addBase.placeholder = "請說...";
-                addBase.value = ""; // 清空內容以顯示 placeholder 提示
+                // iOS 為了提供回饋，可以在開始時輕微震動 (如果支援)
+                if (window.navigator.vibrate) window.navigator.vibrate(10);
             };
+
             recognition.onend = () => {
                 btnMic.classList.remove('recording');
                 addBase.placeholder = "輸入原型 ";
             };
             
             btnMic.addEventListener('click', () => {
+                // 檢查是否為安全上下文 (HTTPS)
+                if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    alert('【連線不安全】\n語音辨識要求必須使用 HTTPS 加密連線。\n目前網址：' + location.protocol + '//' + location.hostname);
+                    return;
+                }
+
                 // 1. 若已經在錄音中，執行停止並立即移除樣式
                 if (btnMic.classList.contains('recording')) {
                     try {
@@ -572,12 +604,6 @@
                         recognition.abort(); // 強制中止
                     }
                     btnMic.classList.remove('recording');
-                    return;
-                }
-
-                // 2. 檢查安全性上下文 (iOS 必要)
-                if (!window.isSecureContext && location.hostname !== 'localhost') {
-                    alert('【連線不安全】\niOS 規定必須使用 HTTPS 網址才能開啟麥克風。請確認網址開頭為 https://');
                     return;
                 }
 
